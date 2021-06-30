@@ -83,6 +83,10 @@ void ff_h264_idct8_add4_neon(uint8_t *dst, const int *block_offset,
                              int16_t *block, int stride,
                              const uint8_t nnzc[6*8]);
 
+// ------------------------------------------------------
+void ff_h264_h_loop_filter_chroma422_neon_10(uint8_t *pix, ptrdiff_t stride, 
+                                             int alpha, int beta, int8_t *tc0);
+
 av_cold void ff_h264dsp_init_aarch64(H264DSPContext *c, const int bit_depth,
                                      const int chroma_format_idc)
 {
@@ -125,5 +129,15 @@ av_cold void ff_h264dsp_init_aarch64(H264DSPContext *c, const int bit_depth,
         c->h264_idct8_add       = ff_h264_idct8_add_neon;
         c->h264_idct8_dc_add    = ff_h264_idct8_dc_add_neon;
         c->h264_idct8_add4      = ff_h264_idct8_add4_neon;
+    } else if (have_neon(cpu_flags) && bit_depth == 10) {
+        if (chroma_format_idc <= 1) {
+//            c->h264_h_loop_filter_chroma = ff_h264_h_loop_filter_chroma_neon;
+//            c->h264_h_loop_filter_chroma_intra = ff_h264_h_loop_filter_chroma_intra_neon;
+//            c->h264_h_loop_filter_chroma_mbaff_intra = ff_h264_h_loop_filter_chroma_mbaff_intra_neon;
+        } else {
+//            c->h264_h_loop_filter_chroma = ff_h264_h_loop_filter_chroma422_neon_10;
+            c->h264_h_loop_filter_chroma_mbaff = ff_h264_h_loop_filter_chroma_neon;
+//            c->h264_h_loop_filter_chroma_intra = ff_h264_h_loop_filter_chroma422_intra_neon;
+//            c->h264_h_loop_filter_chroma_mbaff_intra = ff_h264_h_loop_filter_chroma_intra_neon;
     }
 }
