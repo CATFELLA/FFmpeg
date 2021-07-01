@@ -42,6 +42,12 @@ void ff_avg_h264_chroma_mc4_neon(uint8_t *dst, uint8_t *src, ptrdiff_t stride,
 void ff_avg_h264_chroma_mc2_neon(uint8_t *dst, uint8_t *src, ptrdiff_t stride,
                                  int h, int x, int y);
 
+void ff_put_h264_chroma_mc2_neon_10(uint8_t *dst, uint8_t *src, ptrdiff_t stride,
+                                    int h, int x, int y);
+
+void ff_avg_h264_chroma_mc2_neon_10(uint8_t *dst, uint8_t *src, ptrdiff_t stride,
+                                    int h, int x, int y);
+
 av_cold void ff_h264chroma_init_aarch64(H264ChromaContext *c, int bit_depth)
 {
     const int high_bit_depth = bit_depth > 8;
@@ -55,5 +61,14 @@ av_cold void ff_h264chroma_init_aarch64(H264ChromaContext *c, int bit_depth)
         c->avg_h264_chroma_pixels_tab[0] = ff_avg_h264_chroma_mc8_neon;
         c->avg_h264_chroma_pixels_tab[1] = ff_avg_h264_chroma_mc4_neon;
         c->avg_h264_chroma_pixels_tab[2] = ff_avg_h264_chroma_mc2_neon;
+    }
+    if (have_neon(cpu_flags) && bit_depth > 8 && bit_depth <= 16) {
+        //c->put_h264_chroma_pixels_tab[0] = ff_put_h264_chroma_mc8_neon;
+        c->put_h264_chroma_pixels_tab[1] = ff_put_h264_chroma_mc4_neon;
+        //c->put_h264_chroma_pixels_tab[2] = ff_put_h264_chroma_mc2_neon_10;
+        
+        //c->avg_h264_chroma_pixels_tab[0] = ff_avg_h264_chroma_mc8_neon;
+        c->avg_h264_chroma_pixels_tab[1] = ff_avg_h264_chroma_mc4_neon;
+        //c->avg_h264_chroma_pixels_tab[2] = ff_avg_h264_chroma_mc2_neon_10;
     }
 }
