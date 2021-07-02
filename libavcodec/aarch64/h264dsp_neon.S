@@ -830,23 +830,10 @@ endfunc
 
 // ------
 
-.macro  h264_loop_filter_start
-        cmp             w2,  #0
-        ldr             w6,  [x4]
-        ccmp            w3,  #0, #0, ne
-        mov             v24.S[0], w6
-        and             w8,  w6,  w6,  lsl #16
-        b.eq            1f
-        ands            w8,  w8,  w8,  lsl #8
-        b.ge            2f
-1:
-        ret
-2:
-.endm
-
 .macro  h264_loop_filter_chroma_10
-        dup             v22.8B, w2              // alpha
-        dup             v23.8B, w3              // beta
+        dup             v22.8H, w2              // alpha
+        dup             v23.8H, w3              // beta // changed it to H
+
         uxtl            v24.8H, v24.8B
         uabd            v26.8B, v16.8B, v0.8B   // abs(p0 - q0)
         uabd            v28.8B, v18.8B, v16.8B  // abs(p1 - p0)
@@ -877,43 +864,120 @@ endfunc
         sqxtun          v0.8B,  v22.8H
 .endm
 
-function ff_h264_h_loop_filter_chroma_neon, export=1
-        h264_loop_filter_start_10
-        sxtw            x1,  w1
+function ff_h264_h_loop_filter_chroma_neon_10, export=1
+        //h264_loop_filter_start // good for 10 bit
+        cmp             w2,  #0
+        ldr             w6,  [x4]
+        ccmp            w3,  #0, #0, ne
+        mov             v24.S[0], w6
+        and             w8,  w6,  w6,  lsl #16
+        b.eq            1f
+        ands            w8,  w8,  w8,  lsl #8
+        b.ge            2f
+1:
+        ret
+2:
 
-        sub             x0,  x0,  #2
+        sxtw            x1,  w1 // extend the stride
+
+        sub             x0,  x0,  #4 // access the 2nd left pixel (so, -4 ?)
 h_loop_filter_chroma420_10:
-        ld1             {v18.S}[0], [x0], x1
-        ld1             {v16.S}[0], [x0], x1
-        ld1             {v0.S}[0],  [x0], x1
-        ld1             {v2.S}[0],  [x0], x1
-        ld1             {v18.S}[1], [x0], x1
-        ld1             {v16.S}[1], [x0], x1
-        ld1             {v0.S}[1],  [x0], x1
-        ld1             {v2.S}[1],  [x0], x1
+        ld1             {v18.d}[0], [x0], x1 // load the pixels, change the size to D, loads 4 16bit pixels
+        ld1             {v16.d}[0], [x0], x1
+        ld1             {v0.d}[0],  [x0], x1
+        ld1             {v2.d}[0],  [x0], x1
+        ld1             {v18.d}[1], [x0], x1
+        ld1             {v16.d}[1], [x0], x1
+        ld1             {v0.d}[1],  [x0], x1
+        ld1             {v2.d}[1],  [x0], x1
 
-        transpose_4x8B  v18, v16, v0, v2, v28, v29, v30, v31
+        transpose_4x8H  v18, v16, v0, v2, v28, v29, v30, v31
 
-        h264_loop_filter_chroma_10
+        //h264_loop_filter_chroma_10
+        lsl             w2, w2, #2
+        lsl             w3, w3, #2
+        dup             v22.8h, w2              // alpha
+        dup             v23.8h, w3              // beta // changed it to H
+        uxtl            v24.8h, v24.8b // leave it be? that's the 8bit thing we loaded
 
-        transpose_4x8B  v18, v16, v0, v2, v28, v29, v30, v31
+        uabd            v26.8h, v16.8h, v0.8h   // abs(p0 - q0) // to 4h, since we actually only need 4 of them
+        uabd            v28.8h, v18.8h, v16.8h  // abs(p1 - p0)
+        uabd            v30.8h, v2.8h,  v0.8h   // abs(q1 - q0)
 
-        sub             x0,  x0,  x1, lsl #3
-        st1             {v18.S}[0], [x0], x1
-        st1             {v16.S}[0], [x0], x1
-        st1             {v0.S}[0],  [x0], x1
-        st1             {v2.S}[0],  [x0], x1
-        st1             {v18.S}[1], [x0], x1
-        st1             {v16.S}[1], [x0], x1
-        st1             {v0.S}[1],  [x0], x1
-        st1             {v2.S}[1],  [x0], x1
+        cmhi            v26.8h, v22.8h, v26.8h  // < alpha
+        cmhi            v28.8h, v23.8h, v28.8h  // < beta
+        cmhi            v30.8h, v23.8h, v30.8h  // < beta
+
+        uxtl            v4.4s,  v0.4h // weird, do we need 4s here
+        uxtl2           v5.4s,  v0.8h
+
+        and             v26.16b, v26.16b, v28.16b
+
+        usubw           v4.4s,  v4.4s,  v16.4h //weird, maybe need the second usubw
+        usubw2          v5.4s,  v5.4s,  v16.8h
+
+        and             v26.16b, v26.16b, v30.16b
+
+        shl             v4.4s,  v4.4s,  #2 // shift 2?
+        shl             v5.4s,  v5.4s,  #2
+
+        mov             x8,  v26.d[0]
+        mov             x9,  v26.d[1]
+        orr             x8, x8,  x9
+
+        sli             v24.8H, v24.8H, #8 // (to 4H?) kinda doubles them, so now it has 8bit sized values but they are repeated one after another t0t0t1t1..
+        uxtl            v24.8H, v24.8B
+        uaddw           v4.4s,  v4.4s,  v18.4h
+
+        cbz             x8,  9f
+
+        usubw           v4.4s,  v4.4s,  v2.4h
+        usubw2          v5.4s,  v5.4s,  v2.8h
+        rshrn           v4.4h,  v4.4s,  #3
+        rshrn2          v4.8h,  v5.4s,  #3
+
+        smin            v4.8h,  v4.8h,  v24.8h
+        neg             v25.8h, v24.8h
+        smax            v4.8h,  v4.8h,  v25.8h
+
+        uxtl            v22.4s, v0.4h
+        uxtl2           v23.4s, v0.8h
+
+        and             v4.16B,  v4.16B,  v26.16B
+
+        uxtl            v28.4s, v16.4h
+        uxtl2           v29.4s, v16.8h
+
+        saddw           v28.4s, v28.4s, v4.4h
+        saddw2          v29.4s, v29.4s, v4.8h
+
+        ssubw           v22.4s, v22.4s, v4.4h
+        ssubw2          v23.4s, v23.4s, v4.8h
+
+        sqxtun          v16.4h, v28.4s
+        sqxtun2         v16.8h, v29.4s
+
+        sqxtun          v0.4h,  v22.4s
+        sqxtun2         v0.8h,  v23.4s
+
+        transpose_4x8H  v18, v16, v0, v2, v28, v29, v30, v31
+
+        sub             x0,  x0,  x1, lsl #3 // haven't converted yet
+        st1             {v18.d}[0], [x0], x1
+        st1             {v16.d}[0], [x0], x1
+        st1             {v0.d}[0],  [x0], x1
+        st1             {v2.d}[0],  [x0], x1
+        st1             {v18.d}[1], [x0], x1
+        st1             {v16.d}[1], [x0], x1
+        st1             {v0.d}[1],  [x0], x1
+        st1             {v2.d}[1],  [x0], x1
 9:
         ret
 endfunc
 
 function ff_h264_h_loop_filter_chroma422_neon_10, export=1
         sxtw            x1,  w1
-        h264_loop_filter_start_10
+        h264_loop_filter_start
         add             x5,  x0,  x1
         sub             x0,  x0,  #2
         add             x1,  x1,  x1
