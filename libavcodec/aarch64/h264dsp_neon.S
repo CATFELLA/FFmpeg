@@ -848,29 +848,39 @@ endfunc
 2:
 .endm
 
-.macro  h264_loop_filter_luma_10 // doesnt work
-        dup             v22.16B, w2                     // alpha
+.macro  h264_loop_filter_luma_10 // doesnt work (hard as well, i'll leave it be for now)
+        dup             v25.8h, w2                     // alpha
         uxtl            v24.8H,  v24.8B
-        uabd            v21.16B, v16.16B, v0.16B        // abs(p0 - q0)
-        uxtl            v24.4S,  v24.4H
-        uabd            v28.16B, v18.16B, v16.16B       // abs(p1 - p0)
-        sli             v24.8H,  v24.8H,  #8
-        uabd            v30.16B, v2.16B,  v0.16B        // abs(q1 - q0)
-        sli             v24.4S,  v24.4S,  #16
-        cmhi            v21.16B, v22.16B, v21.16B       // < alpha
-        dup             v22.16B, w3                     // beta
-        cmlt            v23.16B, v24.16B, #0
-        cmhi            v28.16B, v22.16B, v28.16B       // < beta
-        cmhi            v30.16B, v22.16B, v30.16B       // < beta
-        bic             v21.16B, v21.16B, v23.16B
-        uabd            v17.16B, v20.16B, v16.16B       // abs(p2 - p0)
-        and             v21.16B, v21.16B, v28.16B
+        uabd            v22.8h,  v16.8h, v0.8h          // abs(p0 - q0) lower
+        uabd            v23.8h,  v17.8h, v1.8h          // higher
+        uxtl            v24.4S,  v24.4H // perhaps even to d
+        uabd            v28.8h,  v18.8h, v16.8h          // abs(p1 - p0) lower
+        uabd            v29.8h,  v19.8h, v17.8h          // higher
+        sli             v24.8H,  v24.8H, #8 // wha`
+        uabd            v30.8h,  v2.8h,  v0.8h           // abs(q1 - q0) lower
+        uabd            v31.8h,  v3.8h,  v1.8h           // higher
+        sli             v24.4S,  v24.4S, #16 // wha
+
+        cmhi            v22.8h, v25.8h, v22.8h          // < alp6a EX v21
+        cmhi            v23.8h, v25.8h, v23.8h
+        dup             v25.8h, w3                      // beta
+        cmlt            v26.16B, v24.16B, #0 // wha  // EX V23
+        cmhi            v28.8h, v25.8h, v28.8h          // < beta
+        cmhi            v29.8h, v25.8h, v29.8h
+        cmhi            v30.8h, v25.8h, v30.8h          // < beta
+        cmhi            v31.8h, v25.8h, v31.8h
+        bic             v22.16B, v22.16B, v26.16B // wha (and v23 as well)
+        bic             v23.16B, v23.16B, v26.16B
+        uabd            v6.8h, v20.8h, v16.8h           // abs(p2 - p0) // ex v17!!
+        uabd            v7.8h, v21.8h, v17.8h
+        and             v22.16B, v22.16B, v28.16B
+        and             v23.16B, v23.16B, v29.16B
         uabd            v19.16B,  v4.16B,  v0.16B       // abs(q2 - q0)
         and             v21.16B, v21.16B, v30.16B       // < beta
         shrn            v30.8b,  v21.8h,  #4
         mov             x7, v30.d[0]
-        cmhi            v17.16B, v22.16B, v17.16B       // < beta
-        cmhi            v19.16B, v22.16B, v19.16B       // < beta
+        cmhi            v17.16B, v25.16B, v17.16B       // < beta
+        cmhi            v19.16B, v25.16B, v19.16B       // < beta
         cbz             x7,  9f
 
         and             v17.16B, v17.16B, v21.16B
@@ -924,14 +934,14 @@ function ff_h264_v_loop_filter_luma_neon_10, export=1 // not working
         h264_loop_filter_start_10
         sxtw            x1,  w1
 
-        ld1             {v0.16B},  [x0], x1
-        ld1             {v2.16B},  [x0], x1
-        ld1             {v4.16B},  [x0], x1
+        ld1             {v0.8h, v1.8h},  [x0], x1
+        ld1             {v2.8h, v3.8h},  [x0], x1
+        ld1             {v4.8h, v5.8h},  [x0], x1
         sub             x0,  x0,  x1, lsl #2
         sub             x0,  x0,  x1, lsl #1
-        ld1             {v20.16B},  [x0], x1
-        ld1             {v18.16B},  [x0], x1
-        ld1             {v16.16B},  [x0], x1
+        ld1             {v20.8h, v21.8h},  [x0], x1
+        ld1             {v18.8h, v19.8h},  [x0], x1
+        ld1             {v16.8h, v17.8h},  [x0], x1
 
         h264_loop_filter_luma_10
 
@@ -1225,4 +1235,3 @@ function ff_h264_h_loop_filter_chroma422_intra_neon_10, export=1
     mov             x30, x7
     b               h_loop_filter_chroma420_intra_10
 endfunc
-
