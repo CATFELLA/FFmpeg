@@ -41,17 +41,6 @@ const iadst16_coeffs, align=4
         .short  14811, 7005, 13160, 9760, 5520, 15426, 2404, 16207
 endconst
 
-.macro transpose_4x4s r0, r1, r2, r3, r4, r5, r6, r7
-        trn1            \r4\().4s,  \r0\().4s,  \r1\().4s
-        trn2            \r5\().4s,  \r0\().4s,  \r1\().4s
-        trn1            \r6\().4s,  \r2\().4s,  \r3\().4s
-        trn2            \r7\().4s,  \r2\().4s,  \r3\().4s
-        trn1            \r0\().2d,  \r4\().2d,  \r6\().2d
-        trn2            \r2\().2d,  \r4\().2d,  \r6\().2d
-        trn1            \r1\().2d,  \r5\().2d,  \r7\().2d
-        trn2            \r3\().2d,  \r5\().2d,  \r7\().2d
-.endm
-
 // Transpose a 8x8 matrix of 32 bit elements, where each row is spread out
 // over two registers.
 .macro transpose_8x8s r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15, t0, t1, t2, t3
@@ -407,7 +396,7 @@ function ff_vp9_\txfm1\()_\txfm2\()_4x4_add_\bpp\()_neon, export=1
 
         st1             {v30.4s,v31.4s}, [x2], #32
         // Transpose 4x4 with 32 bit elements
-        transpose_4x4s  v4,  v5,  v6,  v7,  v16, v17, v18, v19
+        transpose_4x4S  v4,  v5,  v6,  v7,  v16, v17, v18, v19
 
         \txfm2\()4_\bpp v4,  v5,  v6,  v7
 2:
