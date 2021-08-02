@@ -603,66 +603,125 @@ endfunc
 
 .macro  idct8x8_cols_10 pass
   .if \pass == 0
-        va      .req    v18
-        vb      .req    v30
-        sshr            v18.8H, v26.8H, #1
-        add             v16.8H, v24.8H, v28.8H
-        ld1             {v30.8H, v31.8H}, [x1]
-        st1             {v19.8H}, [x1],  #16
-        st1             {v19.8H}, [x1],  #16
-        sub             v17.8H,  v24.8H, v28.8H
-        sshr            v19.8H,  v30.8H, #1
-        sub             v18.8H,  v18.8H,  v30.8H
-        add             v19.8H,  v19.8H,  v26.8H
+        va      .req    v0
+        vaa     .req    v1
+        vb      .req    v28
+        vbb     .req    v29
+
+        sshr            v0.4S, v24.4S, #1 // ex 18
+        sshr            v1.4S, v25.4S, #1
+        add             v2.4S, v16.4S, v24.4S // ex 16
+        add             v3.4S, v17.4S, v25.4S
+
+        ld1             {v28.4S, v29.4S, v30.4S, v31.4S}, [x1]
+        st1             {v7.4S}, [x1],   #16
+        st1             {v7.4S}, [x1],   #16
+        st1             {v7.4S}, [x1],   #16
+        st1             {v7.4S}, [x1],   #16
+
+        sub             v4.4S,  v16.4S, v24.4S // ex 17
+        sub             v5.4S,  v17.4S, v25.4S
+        sshr            v6.4S,  v28.4S, #1 // ex 19
+        sshr            v7.4S,  v29.4S, #1
+        sub             v0.4S,  v0.4S,  v28.4S // ex 18 still
+        sub             v1.4S,  v1.4S,  v29.4S
+        add             v6.4S,  v6.4S,  v20.4S // ex 19 still
+        add             v7.4S,  v7.4S,  v21.4S
   .else
-        va      .req    v30
-        vb      .req    v18
-        sshr            v30.8H, v26.8H, #1
-        sshr            v19.8H, v18.8H, #1
-        add             v16.8H, v24.8H, v28.8H
-        sub             v17.8H, v24.8H, v28.8H
-        sub             v30.8H, v30.8H, v18.8H
-        add             v19.8H, v19.8H, v26.8H
+        va      .req    v28
+        vaa     .req    v29
+        vb      .req    v0
+        vbb     .req    v1
+
+        sshr            v28.4S, v20.4S, #1 // ex 30
+        sshr            v29.4S, v21.4S, #1
+        sshr            v6.4S, v0.4S, #1 // fucking hell (ex 18 here)
+        sshr            v7.4S, v1.4S, #1
+        add             v2.4S, v16.4S, v24.4S // ex 16
+        add             v3.4S, v17.4S, v25.4S
+        sub             v4.4S, v16.4S, v24.4S // ex 17
+        sub             v5.4S, v17.4S, v25.4S 
+        sub             v28.4S, v28.4S, v0.4S
+        sub             v29.4S, v29.4S, v1.4S
+        add             v6.4S, v6.4S, v20.4S // ex 19
+        add             v7.4S, v7.4S, v21.4S
   .endif
-        add             v26.8H, v17.8H, va.8H
-        sub             v28.8H, v17.8H, va.8H
-        add             v24.8H, v16.8H, v19.8H
-        sub             vb.8H,  v16.8H, v19.8H
-        sub             v16.8H, v29.8H, v27.8H
-        add             v17.8H, v31.8H, v25.8H
-        sub             va.8H,  v31.8H, v25.8H
-        add             v19.8H, v29.8H, v27.8H
-        sub             v16.8H, v16.8H, v31.8H
-        sub             v17.8H, v17.8H, v27.8H
-        add             va.8H,  va.8H,  v29.8H
-        add             v19.8H, v19.8H, v25.8H
-        sshr            v25.8H, v25.8H, #1
-        sshr            v27.8H, v27.8H, #1
-        sshr            v29.8H, v29.8H, #1
-        sshr            v31.8H, v31.8H, #1
-        sub             v16.8H, v16.8H, v31.8H
-        sub             v17.8H, v17.8H, v27.8H
-        add             va.8H,  va.8H,  v29.8H
-        add             v19.8H, v19.8H, v25.8H
-        sshr            v25.8H, v16.8H, #2
-        sshr            v27.8H, v17.8H, #2
-        sshr            v29.8H, va.8H,  #2
-        sshr            v31.8H, v19.8H, #2
-        sub             v19.8H, v19.8H, v25.8H
-        sub             va.8H,  v27.8H, va.8H
-        add             v17.8H, v17.8H, v29.8H
-        add             v16.8H, v16.8H, v31.8H
+        add             v20.4S, v4.4S, va.4S
+        add             v21.4S, v5.4S, vaa.4S
+        sub             v24.4S, v4.4S, va.4S
+        sub             v25.4S, v5.4S, vaa.4S
+        add             v16.4S, v2.4S,  v6.4S
+        add             v17.4S, v3.4S,  v7.4S
+        sub             vb.4S,  v2.4S, v6.4S
+        sub             vbb.4S, v3.4S, v7.4S
+        sub             v2.4S,  v26.4S, v22.4S
+        sub             v3.4S,  v27.4S, v23.4S
+        add             v4.4S,  v30.4S, v18.4S
+        add             v5.4S,  v31.4S, v19.4S
+        sub             va.4S,  v30.4S, v18.4S
+        sub             vaa.4S, v31.4S, v19.4S
+        add             v6.4S, v26.4S, v22.4S
+        add             v7.4S, v27.4S, v23.4S
+        sub             v2.4S, v2.4S, v30.4S
+        sub             v3.4S, v3.4S, v31.4S
+        sub             v4.4S, v4.4S, v22.4S
+        sub             v5.4S, v5.4S, v23.4S
+        add             va.4S,  va.4S,  v26.4S
+        add             vaa.4S, vaa.4S, v27.4S
+        add             v6.4S, v6.4S, v18.4S
+        add             v7.4S, v7.4S, v19.4S
+        sshr            v18.4S, v18.4S, #1
+        sshr            v19.4S, v19.4S, #1
+        sshr            v22.4S, v22.4S, #1
+        sshr            v23.4S, v23.4S, #1
+        sshr            v20.4S, v20.4S, #1
+        sshr            v21.4S, v21.4S, #1
+        sshr            v30.4S, v30.4S, #1
+        sshr            v31.4S, v31.4S, #1
+        sub             v2.4S, v2.4S, v30.4S
+        sub             v3.4S, v3.4S, v31.4S
+        sub             v4.4S, v4.4S, v22.4S
+        sub             v5.4S, v5.4S, v23.4S
+        add             va.4S,  va.4S,  v26.4S
+        add             vaa.4S, vaa.4S, v27.4S
+        add             v6.4S, v6.4S, v18.4S
+        add             v7.4S, v7.4S, v19.4S
+        sshr            v18.4S, v18.4S, #2
+        sshr            v19.4S, v19.4S, #2
+        sshr            v22.4S, v4.4S,  #2
+        sshr            v23.4S, v5.4S,  #2
+        sshr            v26.4S, va.4S,  #2
+        sshr            v27.4S, vaa.4S, #2
+        sshr            v30.4S, v6.4S,  #2
+        sshr            v31.4S, v7.4S,  #2
+        sub             v6.4S, v6.4S, v18.4S
+        sub             v7.4S, v7.4S, v19.4S
+        sub             va.4S,  v22.4S, va.4S
+        sub             vaa.4S, v23.4S, vaa.4S
+        add             v4.4S, v4.4S, v26.4S
+        add             v5.4S, v5.4S, v27.4S
+        add             v2.4S, v2.4S, v30.4S
+        add             v3.4S, v3.4S, v31.4S
   .if \pass == 0
-        sub             v31.8H, v24.8H, v19.8H
-        add             v24.8H, v24.8H, v19.8H
-        add             v25.8H, v26.8H, v18.8H
-        sub             v18.8H, v26.8H, v18.8H
-        add             v26.8H, v28.8H, v17.8H
-        add             v27.8H, v30.8H, v16.8H
-        sub             v29.8H, v28.8H, v17.8H
-        sub             v28.8H, v30.8H, v16.8H
+        sub             v30.4S, v16.4S, v6.4S
+        sub             v31.4S, v17.4S, v7.4S
+        add             v16.4S, v16.4S, v6.4S
+        add             v17.4S, v17.4S, v7.4S
+        add             v18.4S, v20.4S, v0.4S
+        add             v19.4S, v21.4S, v1.4S
+        sub             v0.4S,  v20.4S, v0.4S
+        sub             v1.4S,  v21.4S, v1.4S
+        add             v20.4S, v24.4S, v4.4S
+        add             v21.4S, v25.4S, v5.4S
+        add             v22.4S, v28.4S, v2.4S
+        sub             v26.4S, v24.4S, v4.4S
+        sub             v27.4S, v25.4S, v5.4S
+        sub             v24.4S, v28.4S, v2.4S
+        sub             v25.4S, v29.4S, v3.4S
   .else
-        sub             v31.8H, v24.8H, v19.8H
+        sub             v30.4S, v16.4S, v6.4S
+        sub             v31.4S, v17.4S, v7.4S
+
         add             v24.8H, v24.8H, v19.8H
         add             v25.8H, v26.8H, v30.8H
         sub             v30.8H, v26.8H, v30.8H
@@ -672,24 +731,35 @@ endfunc
         sub             v28.8H, v18.8H, v16.8H
   .endif
         .unreq          va
+        .unreq          vaa
         .unreq          vb
+        .unreq          vbb
 .endm
 
 function ff_h264_idct8_add_neon_10, export=1
 .L_ff_h264_idct8_add_neon_10:
-        movi            v19.8H,   #0
+        movi            v7.4S,   #0
         sxtw            x2,       w2
-        ld1             {v24.8H, v25.8H}, [x1]
-        st1             {v19.8H},  [x1],   #16
-        st1             {v19.8H},  [x1],   #16
-        ld1             {v26.8H, v27.8H}, [x1]
-        st1             {v19.8H},  [x1],   #16
-        st1             {v19.8H},  [x1],   #16
-        ld1             {v28.8H, v29.8H}, [x1]
-        st1             {v19.8H},  [x1],   #16
-        st1             {v19.8H},  [x1],   #16
 
-        idct8x8_cols    0
+        ld1             {v16.4S, v17.4S, v18.4S, v19.4S}, [x1]
+        st1             {v7.4S},  [x1],   #16
+        st1             {v7.4S},  [x1],   #16
+        st1             {v7.4S},  [x1],   #16
+        st1             {v7.4S},  [x1],   #16
+
+        ld1             {v20.4S, v21.4S, v22.4S, v23.4S}, [x1]
+        st1             {v7.4S},  [x1],   #16
+        st1             {v7.4S},  [x1],   #16
+        st1             {v7.4S},  [x1],   #16
+        st1             {v7.4S},  [x1],   #16
+    
+        ld1             {v24.4S, v25.4S, v26.4S, v27.4S}, [x1]
+        st1             {v7.4S},  [x1],   #16
+        st1             {v7.4S},  [x1],   #16
+        st1             {v7.4S},  [x1],   #16
+        st1             {v7.4S},  [x1],   #16
+
+        idct8x8_cols_10 0
         transpose_8x8H  v24, v25, v26, v27, v28, v29, v18, v31, v6, v7
         idct8x8_cols    1
 
