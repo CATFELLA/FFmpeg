@@ -608,8 +608,8 @@ endfunc
         vb      .req    v28
         vbb     .req    v29
 
-        sshr            v0.4S, v24.4S, #1 // ex 18
-        sshr            v1.4S, v25.4S, #1
+        sshr            v0.4S, v20.4S, #1 // ex 18
+        sshr            v1.4S, v21.4S, #1
         add             v2.4S, v16.4S, v24.4S // ex 16
         add             v3.4S, v17.4S, v25.4S
 
@@ -635,7 +635,7 @@ endfunc
 
         sshr            v28.4S, v20.4S, #1 // ex 30
         sshr            v29.4S, v21.4S, #1
-        sshr            v6.4S, v0.4S, #1 // fucking hell (ex 18 here)
+        sshr            v6.4S, v0.4S, #1 // ex 18 here
         sshr            v7.4S, v1.4S, #1
         add             v2.4S, v16.4S, v24.4S // ex 16
         add             v3.4S, v17.4S, v25.4S
@@ -721,14 +721,20 @@ endfunc
   .else
         sub             v30.4S, v16.4S, v6.4S
         sub             v31.4S, v17.4S, v7.4S
-
-        add             v24.8H, v24.8H, v19.8H
-        add             v25.8H, v26.8H, v30.8H
-        sub             v30.8H, v26.8H, v30.8H
-        add             v26.8H, v28.8H, v17.8H
-        sub             v29.8H, v28.8H, v17.8H
-        add             v27.8H, v18.8H, v16.8H
-        sub             v28.8H, v18.8H, v16.8H
+        add             v16.4S, v16.4S, v6.4S
+        add             v17.4S, v17.4S, v7.4S
+        add             v18.4S, v20.4S, v28.4S
+        add             v19.4S, v21.4S, v29.4S
+        sub             v28.4S, v20.4S, v28.4S
+        sub             v29.4S, v21.4S, v29.4S
+        add             v20.4S, v24.4S, v4.4S
+        add             v21.4S, v25.4S, v5.4S
+        sub             v26.4S, v24.4S, v4.4S
+        sub             v27.4S, v25.4S, v5.4S
+        add             v22.4S, v0.4S, v2.4S
+        add             v23.4S, v1.4S, v3.4S
+        sub             v24.4S, v0.4S, v2.4S
+        sub             v25.4S, v1.4S, v3.4S
   .endif
         .unreq          va
         .unreq          vaa
@@ -760,52 +766,76 @@ function ff_h264_idct8_add_neon_10, export=1
         st1             {v7.4S},  [x1],   #16
 
         idct8x8_cols_10 0
-        transpose_8x8H  v24, v25, v26, v27, v28, v29, v18, v31, v6, v7
-        idct8x8_cols    1
+        transpose_8x8S  v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27, v0, v1, v30, v31, v8, v9, v10, v11 // remove v8 - v11 (it's possible I think)
+        idct8x8_cols_10 1
 
         mov             x3,  x0
-        srshr           v24.8H, v24.8H, #6
-        ld1             {v0.8B},     [x0], x2
-        srshr           v25.8H, v25.8H, #6
-        ld1             {v1.8B},     [x0], x2
-        srshr           v26.8H, v26.8H, #6
-        ld1             {v2.8B},     [x0], x2
-        srshr           v27.8H, v27.8H, #6
-        ld1             {v3.8B},     [x0], x2
-        srshr           v28.8H, v28.8H, #6
-        ld1             {v4.8B},     [x0], x2
-        srshr           v29.8H, v29.8H, #6
-        ld1             {v5.8B},     [x0], x2
-        srshr           v30.8H, v30.8H, #6
-        ld1             {v6.8B},     [x0], x2
-        srshr           v31.8H, v31.8H, #6
-        ld1             {v7.8B},     [x0], x2
-        uaddw           v24.8H, v24.8H, v0.8B
-        uaddw           v25.8H, v25.8H, v1.8B
-        uaddw           v26.8H, v26.8H, v2.8B
-        sqxtun          v0.8B,  v24.8H
-        uaddw           v27.8H, v27.8H, v3.8B
-        sqxtun          v1.8B,  v25.8H
-        uaddw           v28.8H, v28.8H, v4.8B
-        sqxtun          v2.8B,  v26.8H
-        st1             {v0.8B},     [x3], x2
-        uaddw           v29.8H, v29.8H, v5.8B
-        sqxtun          v3.8B,  v27.8H
-        st1             {v1.8B},     [x3], x2
-        uaddw           v30.8H, v30.8H, v6.8B
-        sqxtun          v4.8B,  v28.8H
-        st1             {v2.8B},     [x3], x2
-        uaddw           v31.8H, v31.8H, v7.8B
-        sqxtun          v5.8B,  v29.8H
-        st1             {v3.8B},     [x3], x2
-        sqxtun          v6.8B,  v30.8H
-        sqxtun          v7.8B,  v31.8H
-        st1             {v4.8B},     [x3], x2
-        st1             {v5.8B},     [x3], x2
-        st1             {v6.8B},     [x3], x2
-        st1             {v7.8B},     [x3], x2
+        srshr           v16.4S, v16.4S, #6
+        srshr           v17.4S, v17.4S, #6
+        ld1             {v0.8H},     [x0], x2
+        srshr           v18.4S, v18.4S, #6
+        srshr           v19.4S, v19.4S, #6
+        ld1             {v1.8H},     [x0], x2
+        srshr           v20.8H, v20.8H, #6
+        srshr           v21.8H, v21.8H, #6
+        ld1             {v2.8H},     [x0], x2
+        srshr           v22.4S, v22.4S, #6
+        srshr           v23.4S, v23.4S, #6
+        ld1             {v3.8H},     [x0], x2
+        srshr           v24.4S, v24.4S, #6
+        srshr           v25.4S, v25.4S, #6
+        ld1             {v4.8H},     [x0], x2
+        srshr           v26.4S, v26.4S, #6
+        srshr           v27.4S, v27.4S, #6
+        ld1             {v5.8H},     [x0], x2
+        srshr           v28.4S, v28.4S, #6
+        srshr           v29.4S, v29.4S, #6
+        ld1             {v6.8H},     [x0], x2
+        srshr           v30.4S, v30.4S, #6
+        srshr           v31.4S, v31.4S, #6
+        ld1             {v7.8H},     [x0], x2
+        uaddw           v16.4S, v16.4S, v0.4H
+        uaddw2          v17.4S, v17.4S, v0.8H
+        uaddw           v18.4S, v18.4S, v1.4H
+        uaddw2          v19.4S, v19.4S, v1.8H
+        uaddw           v20.4S, v20.4S, v2.4H
+        uaddw2          v21.4S, v21.4S, v2.8H
+        sqxtun          v0.4H,  v16.4S
+        sqxtun2         v0.8H,  v17.4S
+        uaddw           v22.4S, v22.4S, v3.4H
+        uaddw2          v23.4S, v23.4S, v3.8H
+        sqxtun          v1.4H,  v18.4S
+        sqxtun2         v1.8H,  v19.4S
+        uaddw           v24.4S, v24.4S, v4.4H
+        uaddw2          v25.4S, v25.4S, v4.8H
+        sqxtun          v2.4H,  v20.4S
+        sqxtun2         v2.8H,  v21.4S
+        st1             {v0.8H},     [x3], x2
+        uaddw           v26.4S, v26.4S, v5.4H
+        uaddw2          v27.4S, v27.4S, v5.8H
+        sqxtun          v3.4H,  v22.4S
+        sqxtun2         v3.8H,  v23.4S
+        st1             {v1.8H},     [x3], x2
+        uaddw           v28.4S, v28.4S, v6.4H
+        uaddw2          v29.4S, v29.4S, v6.8H
+        sqxtun          v4.4H,  v24.4S
+        sqxtun2         v4.8H,  v25.4S
+        st1             {v2.8H},     [x3], x2
+        uaddw           v30.4S, v30.4S, v7.4H
+        uaddw2          v31.4S, v31.4S, v7.8H
+        sqxtun          v5.4H,  v26.4S
+        sqxtun2         v5.8H,  v27.4S
+        st1             {v3.8H},     [x3], x2
+        sqxtun          v6.4H,  v28.4S
+        sqxtun2         v6.8H,  v29.4S
+        sqxtun          v7.4H,  v30.4S
+        sqxtun2         v7.8H,  v31.4S
+        st1             {v4.8H},     [x3], x2
+        st1             {v5.8H},     [x3], x2
+        st1             {v6.8H},     [x3], x2
+        st1             {v7.8H},     [x3], x2
 
-        sub             x1,  x1,  #128
+        sub             x1,  x1,  #256 // used to be 128
         ret
 endfunc
 
@@ -850,21 +880,32 @@ function ff_h264_idct8_dc_add_neon_10, export=1
         sqxtun          v3.4H,  v22.4S
         sqxtun2         v3.8H,  v23.4S
         sub             x0,  x0,  x2, lsl #3
+
+        mov             w8,  #1023
+        dup             v16.8H,  w8
+        smin            v0.8H,  v0.8H,  v16.8H
         st1             {v0.8H},     [x0], x2
         sqxtun          v4.4H,  v24.4S
         sqxtun2         v4.8H,  v25.4S
+        smin            v1.8H,  v1.8H,  v16.8H
         st1             {v1.8H},     [x0], x2
         sqxtun          v5.4H,  v26.4S
         sqxtun2         v5.8H,  v27.4S
+        smin            v2.8H,  v2.8H,  v16.8H
         st1             {v2.8H},     [x0], x2
         sqxtun          v6.4H,  v28.4S
         sqxtun2         v6.8H,  v29.4S
+        smin            v3.8H,  v3.8H,  v16.8H
         st1             {v3.8H},     [x0], x2
         sqxtun          v7.4H,  v30.4S
         sqxtun2         v7.8H,  v31.4S
+        smin            v4.8H,  v4.8H,  v16.8H
         st1             {v4.8H},     [x0], x2
+        smin            v5.8H,  v5.8H,  v16.8H
         st1             {v5.8H},     [x0], x2
+        smin            v6.8H,  v6.8H,  v16.8H
         st1             {v6.8H},     [x0], x2
+        smin            v7.8H,  v7.8H,  v16.8H
         st1             {v7.8H},     [x0], x2
         ret
 endfunc
