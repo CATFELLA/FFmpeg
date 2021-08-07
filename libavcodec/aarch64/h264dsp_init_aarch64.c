@@ -211,6 +211,6 @@ av_cold void ff_h264dsp_init_aarch64(H264DSPContext *c, const int bit_depth,
             c->h264_idct_add8   = ff_h264_idct_add8_neon_10;
         c->h264_idct8_add       = ff_h264_idct8_add_neon_10;
         c->h264_idct8_dc_add    = ff_h264_idct8_dc_add_neon_10;
-//        c->h264_idct8_add4      = ff_h264_idct8_add4_neon_10;
+        c->h264_idct8_add4      = ff_h264_idct8_add4_neon_10;
     }
 }

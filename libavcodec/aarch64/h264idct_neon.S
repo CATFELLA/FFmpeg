@@ -415,6 +415,7 @@ endconst
 function ff_h264_idct_add_neon_10, export=1
 .L_ff_h264_idct_add_neon_10:
         ld1             {v0.4S, v1.4S, v2.4S, v3.4S},  [x1]
+
         sxtw            x2,     w2
         movi            v30.8H, #0
 
@@ -498,8 +499,7 @@ function ff_h264_idct_dc_add_neon_10, export=1
         sqxtun2         v1.8H,  v7.4S
         sub             x0,  x0,  x2, lsl #2
 
-        mov             w8,  #1023      // for clipping
-        dup             v4.8H,  w8
+        mvni            v4.8H, #0xFC, lsl #8
         smin            v0.8H,  v0.8H,  v4.8H
         smin            v1.8H,  v1.8H,  v4.8H
 
@@ -517,7 +517,7 @@ function ff_h264_idct_add16_neon_10, export=1
         mov             x1,  x2         // block
         mov             w9,  w3         // stride
         movrel          x7,  scan8
-        mov             x10, #32
+        mov             x10, #16
         movrel          x13, .L_ff_h264_idct_dc_add_neon_10
         movrel          x14, .L_ff_h264_idct_add_neon_10
 1:      mov             w2,  w9
@@ -531,7 +531,7 @@ function ff_h264_idct_add16_neon_10, export=1
         ccmp            w3,  #0,  #4,  eq
         csel            x15, x13, x14, ne
         blr             x15
-2:      subs            x10, x10, #2
+2:      subs            x10, x10, #1
         add             x1,  x1,  #64
         b.ne            1b
         ret             x12
@@ -544,7 +544,7 @@ function ff_h264_idct_add16intra_neon_10, export=1
         mov             x1,  x2         // block
         mov             w9,  w3         // stride
         movrel          x7,  scan8
-        mov             x10, #32
+        mov             x10, #16
         movrel          x13, .L_ff_h264_idct_dc_add_neon_10
         movrel          x14, .L_ff_h264_idct_add_neon_10
 1:      mov             w2,  w9
@@ -558,13 +558,13 @@ function ff_h264_idct_add16intra_neon_10, export=1
         ccmp            w3,  #0,  #0,  eq
         b.eq            2f
         blr             x15
-2:      subs            x10, x10, #2
+2:      subs            x10, x10, #1
         add             x1,  x1,  #64
         b.ne            1b
         ret             x12
 endfunc
 
-function ff_h264_idct_add8_neon_10, export=1 // NO TESTS T_T
+function ff_h264_idct_add8_neon_10, export=1 // NO TESTS
         ret
         sub             sp,  sp, #0x40 // enough?
         stp             x19, x20, [sp]
@@ -577,7 +577,7 @@ function ff_h264_idct_add8_neon_10, export=1 // NO TESTS T_T
         movrel          x14, .L_ff_h264_idct_add_neon_10
         movrel          x7,  scan8, 16
         mov             x10, #0
-        mov             x11, #32 // used to be 16
+        mov             x11, #16 // used to be 16
 1:      mov             w2,  w19
         ldrb            w3,  [x7, x10]          // scan8[i]
         ldrsw           x0,  [x5, x10, lsl #2]  // block_offset[i]
@@ -590,7 +590,7 @@ function ff_h264_idct_add8_neon_10, export=1 // NO TESTS T_T
         ccmp            w3,  #0,  #0,  eq
         b.eq            2f
         blr             x20
-2:      add             x10, x10, #2 // used to be 1
+2:      add             x10, x10, #1 // used to be 1
         cmp             x10, #4
         csel            x10, x11, x10, eq     // mov x10, #16
         csel            x6,  x15, x6,  eq
@@ -608,9 +608,9 @@ endfunc
         vb      .req    v28
         vbb     .req    v29
 
-        sshr            v0.4S, v20.4S, #1 // ex 18
+        sshr            v0.4S, v20.4S, #1
         sshr            v1.4S, v21.4S, #1
-        add             v2.4S, v16.4S, v24.4S // ex 16
+        add             v2.4S, v16.4S, v24.4S   // a0
         add             v3.4S, v17.4S, v25.4S
 
         ld1             {v28.4S, v29.4S, v30.4S, v31.4S}, [x1]
@@ -619,13 +619,13 @@ endfunc
         st1             {v7.4S}, [x1],   #16
         st1             {v7.4S}, [x1],   #16
 
-        sub             v4.4S,  v16.4S, v24.4S // ex 17
+        sub             v4.4S,  v16.4S, v24.4S
         sub             v5.4S,  v17.4S, v25.4S
-        sshr            v6.4S,  v28.4S, #1 // ex 19
+        sshr            v6.4S,  v28.4S, #1
         sshr            v7.4S,  v29.4S, #1
-        sub             v0.4S,  v0.4S,  v28.4S // ex 18 still
+        sub             v0.4S,  v0.4S,  v28.4S
         sub             v1.4S,  v1.4S,  v29.4S
-        add             v6.4S,  v6.4S,  v20.4S // ex 19 still
+        add             v6.4S,  v6.4S,  v20.4S  // a6
         add             v7.4S,  v7.4S,  v21.4S
   .else
         va      .req    v28
@@ -633,24 +633,24 @@ endfunc
         vb      .req    v0
         vbb     .req    v1
 
-        sshr            v28.4S, v20.4S, #1 // ex 30
+        sshr            v28.4S, v20.4S, #1
         sshr            v29.4S, v21.4S, #1
-        sshr            v6.4S, v0.4S, #1 // ex 18 here
+        sshr            v6.4S, v0.4S, #1
         sshr            v7.4S, v1.4S, #1
-        add             v2.4S, v16.4S, v24.4S // ex 16
+        add             v2.4S, v16.4S, v24.4S
         add             v3.4S, v17.4S, v25.4S
-        sub             v4.4S, v16.4S, v24.4S // ex 17
-        sub             v5.4S, v17.4S, v25.4S 
+        sub             v4.4S, v16.4S, v24.4S
+        sub             v5.4S, v17.4S, v25.4S
         sub             v28.4S, v28.4S, v0.4S
         sub             v29.4S, v29.4S, v1.4S
-        add             v6.4S, v6.4S, v20.4S // ex 19
+        add             v6.4S, v6.4S, v20.4S
         add             v7.4S, v7.4S, v21.4S
   .endif
         add             v20.4S, v4.4S, va.4S
         add             v21.4S, v5.4S, vaa.4S
         sub             v24.4S, v4.4S, va.4S
         sub             v25.4S, v5.4S, vaa.4S
-        add             v16.4S, v2.4S,  v6.4S
+        add             v16.4S, v2.4S,  v6.4S   // b0
         add             v17.4S, v3.4S,  v7.4S
         sub             vb.4S,  v2.4S, v6.4S
         sub             vbb.4S, v3.4S, v7.4S
@@ -674,8 +674,8 @@ endfunc
         sshr            v19.4S, v19.4S, #1
         sshr            v22.4S, v22.4S, #1
         sshr            v23.4S, v23.4S, #1
-        sshr            v20.4S, v20.4S, #1
-        sshr            v21.4S, v21.4S, #1
+        sshr            v26.4S, v26.4S, #1
+        sshr            v27.4S, v27.4S, #1
         sshr            v30.4S, v30.4S, #1
         sshr            v31.4S, v31.4S, #1
         sub             v2.4S, v2.4S, v30.4S
@@ -684,16 +684,16 @@ endfunc
         sub             v5.4S, v5.4S, v23.4S
         add             va.4S,  va.4S,  v26.4S
         add             vaa.4S, vaa.4S, v27.4S
-        add             v6.4S, v6.4S, v18.4S
+        add             v6.4S, v6.4S, v18.4S    // a7
         add             v7.4S, v7.4S, v19.4S
-        sshr            v18.4S, v18.4S, #2
-        sshr            v19.4S, v19.4S, #2
-        sshr            v22.4S, v4.4S,  #2
-        sshr            v23.4S, v5.4S,  #2
-        sshr            v26.4S, va.4S,  #2
+        sshr            v18.4S, v2.4S, #2
+        sshr            v19.4S, v3.4S, #2
+        sshr            v22.4S, v4.4S, #2
+        sshr            v23.4S, v5.4S, #2
+        sshr            v26.4S, va.4S, #2
         sshr            v27.4S, vaa.4S, #2
-        sshr            v30.4S, v6.4S,  #2
-        sshr            v31.4S, v7.4S,  #2
+        sshr            v30.4S, v6.4S, #2
+        sshr            v31.4S, v7.4S, #2
         sub             v6.4S, v6.4S, v18.4S
         sub             v7.4S, v7.4S, v19.4S
         sub             va.4S,  v22.4S, va.4S
@@ -714,11 +714,12 @@ endfunc
         add             v20.4S, v24.4S, v4.4S
         add             v21.4S, v25.4S, v5.4S
         add             v22.4S, v28.4S, v2.4S
+        add             v23.4S, v29.4S, v3.4S
         sub             v26.4S, v24.4S, v4.4S
         sub             v27.4S, v25.4S, v5.4S
         sub             v24.4S, v28.4S, v2.4S
         sub             v25.4S, v29.4S, v3.4S
-  .else
+  .else // good
         sub             v30.4S, v16.4S, v6.4S
         sub             v31.4S, v17.4S, v7.4S
         add             v16.4S, v16.4S, v6.4S
@@ -758,7 +759,7 @@ function ff_h264_idct8_add_neon_10, export=1
         st1             {v7.4S},  [x1],   #16
         st1             {v7.4S},  [x1],   #16
         st1             {v7.4S},  [x1],   #16
-    
+
         ld1             {v24.4S, v25.4S, v26.4S, v27.4S}, [x1]
         st1             {v7.4S},  [x1],   #16
         st1             {v7.4S},  [x1],   #16
@@ -766,7 +767,8 @@ function ff_h264_idct8_add_neon_10, export=1
         st1             {v7.4S},  [x1],   #16
 
         idct8x8_cols_10 0
-        transpose_8x8S  v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27, v0, v1, v30, v31, v8, v9, v10, v11 // remove v8 - v11 (it's possible I think)
+
+        transpose_8x8S  v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27, v0, v1, v30, v31, v2, v3, v4, v5
         idct8x8_cols_10 1
 
         mov             x3,  x0
@@ -776,8 +778,8 @@ function ff_h264_idct8_add_neon_10, export=1
         srshr           v18.4S, v18.4S, #6
         srshr           v19.4S, v19.4S, #6
         ld1             {v1.8H},     [x0], x2
-        srshr           v20.8H, v20.8H, #6
-        srshr           v21.8H, v21.8H, #6
+        srshr           v20.4S, v20.4S, #6
+        srshr           v21.4S, v21.4S, #6
         ld1             {v2.8H},     [x0], x2
         srshr           v22.4S, v22.4S, #6
         srshr           v23.4S, v23.4S, #6
@@ -835,7 +837,7 @@ function ff_h264_idct8_add_neon_10, export=1
         st1             {v6.8H},     [x3], x2
         st1             {v7.8H},     [x3], x2
 
-        sub             x1,  x1,  #256 // used to be 128
+        sub             x1,  x1,  #256
         ret
 endfunc
 
@@ -868,7 +870,7 @@ function ff_h264_idct8_dc_add_neon_10, export=1
         uaddw           v26.4S, v31.4S, v5.4H
         uaddw2          v27.4S, v31.4S, v5.8H
         uaddw           v28.4S, v31.4S, v6.4H
-        uaddw2          v29.4S, v31.4S, v6.8H 
+        uaddw2          v29.4S, v31.4S, v6.8H
         uaddw           v30.4S, v31.4S, v7.4H
         uaddw2          v31.4S, v31.4S, v7.8H
         sqxtun          v0.4H,  v16.4S
@@ -881,8 +883,7 @@ function ff_h264_idct8_dc_add_neon_10, export=1
         sqxtun2         v3.8H,  v23.4S
         sub             x0,  x0,  x2, lsl #3
 
-        mov             w8,  #1023
-        dup             v16.8H,  w8
+        mvni            v16.8H, #0xFC, lsl #8
         smin            v0.8H,  v0.8H,  v16.8H
         st1             {v0.8H},     [x0], x2
         sqxtun          v4.4H,  v24.4S
@@ -918,20 +919,20 @@ function ff_h264_idct8_add4_neon_10, export=1
         mov             w2,  w3
         movrel          x7,  scan8
         mov             w10, #16
-        movrel          x13, .L_ff_h264_idct8_dc_add_neon
-        movrel          x14, .L_ff_h264_idct8_add_neon
+        movrel          x13, .L_ff_h264_idct8_dc_add_neon_10
+        movrel          x14, .L_ff_h264_idct8_add_neon_10
 1:      ldrb            w9,  [x7], #4
-        ldrsw           x0,  [x5], #16
-        ldrb            w9,  [x4, w9, UXTW]
+        ldrsw           x0,  [x5], #16        // block_offset
+        ldrb            w9,  [x4, w9, UXTW]   // nnz
         subs            w9,  w9,  #1
         b.lt            2f
-        ldrsh           w11,  [x1]
+        ldr             w11,  [x1]
         add             x0,  x6,  x0
         ccmp            w11, #0,  #4,  eq
         csel            x15, x13, x14, ne
         blr             x15
 2:      subs            w10, w10, #4
-        add             x1,  x1,  #128
+        add             x1,  x1,  #256
         b.ne            1b
         ret             x12
 endfunc
