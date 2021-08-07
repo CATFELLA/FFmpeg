@@ -452,8 +452,8 @@ endconst
 //--------------
 
 /* chroma_mc4(uint8_t *dst, uint8_t *src, ptrdiff_t stride, int h, int x, int y) */
-.macro  h264_chroma_mc4 type, codec=h264
-function ff_\type\()_\codec\()_chroma_mc4_neon, export=1
+.macro  h264_chroma_mc4_10 type, codec=h264
+function ff_\type\()_\codec\()_chroma_mc4_neon_10, export=1
   .ifc \type,avg
         mov             x8,  x0
   .endif
@@ -617,6 +617,7 @@ endfunc
 
 .macro  h264_chroma_mc2_10 type
 function ff_\type\()_h264_chroma_mc2_neon_10, export=1
+        ret
         prfm            pldl1strm, [x1]
         prfm            pldl1strm, [x1, x2]
         orr             w7,  w4,  w5
