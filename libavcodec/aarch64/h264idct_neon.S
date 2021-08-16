@@ -565,22 +565,22 @@ function ff_h264_idct_add16intra_neon_10, export=1
 endfunc
 
 function ff_h264_idct_add8_neon_10, export=1 // NO TESTS
-        ret
-        sub             sp,  sp, #0x40 // enough?
+        sub             sp,  sp, #0x40
         stp             x19, x20, [sp]
         mov             x12, x30
         ldp             x6,  x15, [x0]          // dest[0], dest[1]
-        add             x5,  x1,  #16*4         // block_offset
-        add             x9,  x2,  #16*32        // block
+        add             x5,  x1,  #32*4     // ub 16    // block_offset
+        add             x9,  x2,  #32*32    //ub 16    // block
         mov             w19, w3                 // stride
         movrel          x13, .L_ff_h264_idct_dc_add_neon_10
         movrel          x14, .L_ff_h264_idct_add_neon_10
         movrel          x7,  scan8, 16
         mov             x10, #0
-        mov             x11, #16 // used to be 16
+        mov             x11, #16
 1:      mov             w2,  w19
         ldrb            w3,  [x7, x10]          // scan8[i]
-        ldrsw           x0,  [x5, x10, lsl #2]  // block_offset[i]
+        lsl             x16,  x10,  #3
+        ldrsw           x0,  [x5, x16] //ub 2   // block_offset[i]
         ldrb            w3,  [x4, w3,  uxtw]    // nnzc[ scan8[i] ]
         add             x0,  x0,  x6            // block_offset[i] + dst[j-1]
         add             x1,  x9,  x10, lsl #5   // block + i * 16
@@ -590,7 +590,7 @@ function ff_h264_idct_add8_neon_10, export=1 // NO TESTS
         ccmp            w3,  #0,  #0,  eq
         b.eq            2f
         blr             x20
-2:      add             x10, x10, #1 // used to be 1
+2:      add             x10, x10, #1
         cmp             x10, #4
         csel            x10, x11, x10, eq     // mov x10, #16
         csel            x6,  x15, x6,  eq
@@ -719,7 +719,7 @@ endfunc
         sub             v27.4S, v25.4S, v5.4S
         sub             v24.4S, v28.4S, v2.4S
         sub             v25.4S, v29.4S, v3.4S
-  .else // good
+  .else
         sub             v30.4S, v16.4S, v6.4S
         sub             v31.4S, v17.4S, v7.4S
         add             v16.4S, v16.4S, v6.4S
