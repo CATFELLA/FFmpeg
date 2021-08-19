@@ -932,3 +932,518 @@ endfunc
 
         h264_qpel16 put
         h264_qpel16 avg
+
+//trashes v0-v5, v7
+.macro  lowpass_8_10    r0,  r1,  r2,  r3,  d0,  d1
+        ext             v2.16B,     \r0\().16B,  \r1\().16B, #4
+        ext             v3.16B,     \r0\().16B,  \r1\().16B, #6
+        add             v2.8H,      v2.8H,       v3.8H
+        ext             v4.16B,     \r0\().16B,  \r1\().16B, #2
+        ext             v5.16B,     \r0\().16B,  \r1\().16B, #8
+        add             v4.8H,      v4.8H,       v5.8H
+        ext             v1.16B,     \r0\().16B,  \r1\().16B, #10
+        uaddl2          \d1\().4S,  \r0\().8H,   v1.8H
+        uaddl           \d0\().4S,  \r0\().4H,   v1.4H
+        ext             v0.16B,      \r2\().16B, \r3\().16B, #4
+        umlal           \d0\().4S,  v2.4H,       v6.H[1]
+        umlal2          \d1\().4S,  v2.8H,       v6.H[1]
+        ext             v1.16B,     \r2\().16B,  \r3\().16B, #6
+        add             v0.8H,      v0.8H,       v1.8H
+        ext             v1.16B,     \r2\().16B,  \r3\().16B, #2
+        umlsl           \d0\().4S,  v4.4H,       v6.H[0]
+        umlsl2          \d1\().4S,  v4.8H,       v6.H[0]
+        sqrshrun        \d0\().4H,  \d0\().4S,   #5
+        sqrshrun2       \d0\().8H,  \d1\().4S,   #5
+        ext             v3.16B,     \r2\().16B,  \r3\().16B, #8
+        add             v1.8H,      v1.8H,       v3.8H
+        ext             v2.16B,     \r2\().16B,  \r3\().16B, #10
+        uaddl           v3.4S,      \r2\().4H,   v2.4H
+        uaddl2          v4.4S,      \r2\().8H,   v2.8H
+        umlal           v3.4S,      v0.4H,       v6.H[1]
+        umlal2          v4.4S,      v0.8H,       v6.H[1]
+        umlsl           v3.4S,      v1.4H,       v6.H[0]
+        umlsl2          v4.4S,      v1.8H,       v6.H[0]
+        mvni            v5.8h,      #0xFC,       lsl #8 // 1023 for clipping
+        sqrshrun        \d1\().4H,  v3.4S,       #5
+        sqrshrun2       \d1\().8H,  v4.4S,       #5
+        smin            \d0\().8H,  \d0\().8H,   v5.8h
+        smin            \d1\().8H,  \d1\().8H,   v5.8h
+.endm
+
+function put_h264_qpel16_h_lowpass_neon_packed_10
+        mov             x4,  x30
+        mov             x12, #32
+        mov             x3,  #16
+        bl              put_h264_qpel8_h_lowpass_neon_10
+        sub             x1,  x1,  x2, lsl #4
+        add             x1,  x1,  #16
+        mov             x12, #32
+        mov             x30, x4
+        b               put_h264_qpel8_h_lowpass_neon_10
+endfunc
+
+.macro  h264_qpel_h_lowpass_10 type
+function \type\()_h264_qpel16_h_lowpass_neon_10
+        mov             x13, x30
+        mov             x12, #32
+        bl              \type\()_h264_qpel8_h_lowpass_neon_10
+        sub             x0,  x0,  x3, lsl #4
+        sub             x1,  x1,  x2, lsl #4
+        add             x0,  x0,  #16
+        add             x1,  x1,  #16
+        mov             x12, #32
+        mov             x30, x13
+endfunc
+
+function \type\()_h264_qpel8_h_lowpass_neon_10
+1:      ld1             {v28.8H, v29.8H}, [x1], x2
+        ld1             {v16.8H, v17.8H}, [x1], x2
+        subs            x12, x12, #4
+        lowpass_8_10    v28, v29, v16, v17, v28, v20
+  .ifc \type,avg
+        ld1             {v2.8H},    [x0], x3
+        urhadd          v28.8H, v28.8H,  v2.8H
+        ld1             {v3.8H},    [x0]
+        urhadd          v20.8H, v20.8H, v3.8H
+        sub             x0,  x0,  x3
+  .endif
+        st1             {v28.8H},    [x0], x3
+        st1             {v20.8H},    [x0], x3
+        b.ne            1b
+        ret
+endfunc
+.endm
+
+        h264_qpel_h_lowpass_10 put
+        h264_qpel_h_lowpass_10 avg
+
+.macro h264_qpel_h_lowpass_l2_10 type
+function \type\()_h264_qpel16_h_lowpass_l2_neon_10
+        mov             x13, x30
+        mov             x12, #32
+        bl              \type\()_h264_qpel8_h_lowpass_l2_neon_10
+        sub             x0,  x0,  x2, lsl #4
+        sub             x1,  x1,  x2, lsl #4
+        sub             x3,  x3,  x2, lsl #4
+        add             x0,  x0,  #16
+        add             x1,  x1,  #16
+        add             x3,  x3,  #16
+        mov             x12, #32
+        mov             x30, x13
+endfunc
+
+function \type\()_h264_qpel8_h_lowpass_l2_neon_10
+1:      ld1             {v26.8H, v27.8H}, [x1], x2
+        ld1             {v16.8H, v17.8H}, [x1], x2
+        ld1             {v28.8H},     [x3], x2
+        ld1             {v29.8H},     [x3], x2
+        subs            x12, x12, #4
+        lowpass_8_10    v26, v27, v16, v17, v26, v27
+        urhadd          v26.8H, v26.8H, v28.8H
+        urhadd          v27.8H, v27.8H, v29.8H
+  .ifc \type,avg
+        ld1             {v2.8H},      [x0], x2
+        urhadd          v26.8H, v26.8H, v2.8H
+        ld1             {v3.8H},      [x0]
+        urhadd          v27.8H, v27.8H, v3.8H
+        sub             x0,  x0,  x2
+  .endif
+        st1             {v26.8H},     [x0], x2
+        st1             {v27.8H},     [x0], x2
+        b.ne            1b
+        ret
+endfunc
+.endm
+
+        h264_qpel_h_lowpass_l2_10 put
+        h264_qpel_h_lowpass_l2_10 avg
+
+function put_h264_qpel16_v_lowpass_neon_packed_10
+        mov             x4,  x30
+        mov             x2,  #8
+        bl              put_h264_qpel8_v_lowpass_neon
+        sub             x1,  x1,  x3, lsl #2
+        bl              put_h264_qpel8_v_lowpass_neon
+        sub             x1,  x1,  x3, lsl #4
+        sub             x1,  x1,  x3, lsl #2
+        add             x1,  x1,  #8
+        bl              put_h264_qpel8_v_lowpass_neon
+        sub             x1,  x1,  x3, lsl #2
+        mov             x30, x4
+        b               put_h264_qpel8_v_lowpass_neon
+endfunc
+
+.macro  h264_qpel_v_lowpass_10 type
+function \type\()_h264_qpel16_v_lowpass_neon_10
+        mov             x4,  x30
+        bl              \type\()_h264_qpel8_v_lowpass_neon_10
+        sub             x1,  x1,  x3, lsl #2
+        bl              \type\()_h264_qpel8_v_lowpass_neon_10
+        sub             x0,  x0,  x2, lsl #4
+        add             x0,  x0,  #16
+        sub             x1,  x1,  x3, lsl #4
+        sub             x1,  x1,  x3, lsl #2
+        add             x1,  x1,  #16
+        bl              \type\()_h264_qpel8_v_lowpass_neon_10
+        sub             x1,  x1,  x3, lsl #2
+        mov             x30, x4
+endfunc
+
+function \type\()_h264_qpel8_v_lowpass_neon_10
+        ld1             {v16.8H}, [x1], x3
+        ld1             {v18.8H}, [x1], x3
+        ld1             {v20.8H}, [x1], x3
+        ld1             {v22.8H}, [x1], x3
+        ld1             {v24.8H}, [x1], x3
+        ld1             {v26.8H}, [x1], x3
+        ld1             {v28.8H}, [x1], x3
+        ld1             {v30.8H}, [x1], x3
+        ld1             {v17.8H}, [x1], x3
+        ld1             {v19.8H}, [x1], x3
+        ld1             {v21.8H}, [x1], x3
+        ld1             {v23.8H}, [x1], x3
+        ld1             {v25.8H}, [x1]
+
+        transpose_8x8H  v16, v18, v20, v22, v24, v26, v28, v30, v0,  v1
+        transpose_8x8H  v17, v19, v21, v23, v25, v27, v29, v31, v0,  v1
+        lowpass_8_10    v16, v17, v18, v19, v16, v17
+        lowpass_8_10    v20, v21, v22, v23, v18, v19
+        lowpass_8_10    v24, v25, v26, v27, v20, v21
+        lowpass_8_10    v28, v29, v30, v31, v22, v23
+        transpose_8x8H  v16, v17, v18, v19, v20, v21, v22, v23, v0,  v1
+
+  .ifc \type,avg
+        ld1             {v24.8H},  [x0], x2
+        urhadd          v16.8H, v16.8H, v24.8H
+        ld1             {v25.8H}, [x0], x2
+        urhadd          v17.8H, v17.8H, v25.8H
+        ld1             {v26.8H}, [x0], x2
+        urhadd          v18.8H, v18.8H, v26.8H
+        ld1             {v27.8H}, [x0], x2
+        urhadd          v19.8H, v19.8H, v27.8H
+        ld1             {v28.8H}, [x0], x2
+        urhadd          v20.8H, v20.8H, v28.8H
+        ld1             {v29.8H}, [x0], x2
+        urhadd          v21.8H, v21.8H, v29.8H
+        ld1             {v30.8H}, [x0], x2
+        urhadd          v22.8H, v22.8H, v30.8H
+        ld1             {v31.8H}, [x0], x2
+        urhadd          v23.8H, v23.8H, v31.8H
+        sub             x0,  x0,  x2,  lsl #3
+  .endif
+
+        st1             {v16.8H}, [x0], x2
+        st1             {v17.8H}, [x0], x2
+        st1             {v18.8H}, [x0], x2
+        st1             {v19.8H}, [x0], x2
+        st1             {v20.8H}, [x0], x2
+        st1             {v21.8H}, [x0], x2
+        st1             {v22.8H}, [x0], x2
+        st1             {v23.8H}, [x0], x2
+
+        ret
+endfunc
+.endm
+
+        h264_qpel_v_lowpass_10 put
+        h264_qpel_v_lowpass_10 avg
+
+.macro  h264_qpel_v_lowpass_l2_10 type
+function \type\()_h264_qpel16_v_lowpass_l2_neon_10
+        mov             x4,  x30
+        bl              \type\()_h264_qpel8_v_lowpass_l2_neon_10
+        sub             x1,  x1,  x3, lsl #2
+        bl              \type\()_h264_qpel8_v_lowpass_l2_neon_10
+        sub             x0,  x0,  x3, lsl #4
+        sub             x12, x12, x2, lsl #4
+        add             x0,  x0,  #16
+        add             x12, x12, #16
+        sub             x1,  x1,  x3, lsl #4
+        sub             x1,  x1,  x3, lsl #2
+        add             x1,  x1,  #16
+        bl              \type\()_h264_qpel8_v_lowpass_l2_neon_10
+        sub             x1,  x1,  x3, lsl #2
+        mov             x30, x4
+endfunc
+
+function \type\()_h264_qpel8_v_lowpass_l2_neon_10
+        ld1             {v16.8H}, [x1], x3
+        ld1             {v18.8H}, [x1], x3
+        ld1             {v20.8H}, [x1], x3
+        ld1             {v22.8H}, [x1], x3
+        ld1             {v24.8H}, [x1], x3
+        ld1             {v26.8H}, [x1], x3
+        ld1             {v28.8H}, [x1], x3
+        ld1             {v30.8H}, [x1], x3
+        ld1             {v17.8H}, [x1], x3
+        ld1             {v19.8H}, [x1], x3
+        ld1             {v21.8H}, [x1], x3
+        ld1             {v23.8H}, [x1], x3
+        ld1             {v25.8H}, [x1]
+
+        transpose_8x8H  v16, v18, v20, v22, v24, v26, v28, v30, v0,  v1
+        transpose_8x8H  v17, v19, v21, v23, v25, v27, v29, v31, v0,  v1
+        lowpass_8_10    v16, v17, v18, v19, v16, v17
+        lowpass_8_10    v20, v21, v22, v23, v18, v19
+        lowpass_8_10    v24, v25, v26, v27, v20, v21
+        lowpass_8_10    v28, v29, v30, v31, v22, v23
+        transpose_8x8H  v16, v17, v18, v19, v20, v21, v22, v23, v0,  v1
+
+        ld1             {v24.8H},  [x12], x2
+        ld1             {v25.8H},  [x12], x2
+        ld1             {v26.8H},  [x12], x2
+        ld1             {v27.8H},  [x12], x2
+        ld1             {v28.8H},  [x12], x2
+        urhadd          v16.8H, v24.8H, v16.8H
+        urhadd          v17.8H, v25.8H, v17.8H
+        ld1             {v29.8H},  [x12], x2
+        urhadd          v18.8H, v26.8H, v18.8H
+        urhadd          v19.8H, v27.8H, v19.8H
+        ld1             {v30.8H}, [x12], x2
+        urhadd          v20.8H, v28.8H, v20.8H
+        urhadd          v21.8H, v29.8H, v21.8H
+        ld1             {v31.8H}, [x12], x2
+        urhadd          v22.8H, v30.8H, v22.8H
+        urhadd          v23.8H, v31.8H, v23.8H
+
+  .ifc \type,avg
+        ld1             {v24.8H}, [x0], x3
+        urhadd          v16.8H, v16.8H, v24.8H
+        ld1             {v25.8H}, [x0], x3
+        urhadd          v17.8H, v17.8H, v25.8H
+        ld1             {v26.8H}, [x0], x3
+        urhadd          v18.8H, v18.8H, v26.8H
+        ld1             {v27.8H}, [x0], x3
+        urhadd          v19.8H, v19.8H, v27.8H
+        ld1             {v28.8H}, [x0], x3
+        urhadd          v20.8H, v20.8H, v28.8H
+        ld1             {v29.8H}, [x0], x3
+        urhadd          v21.8H, v21.8H, v29.8H
+        ld1             {v30.8H}, [x0], x3
+        urhadd          v22.8H, v22.8H, v30.8H
+        ld1             {v31.8H}, [x0], x3
+        urhadd          v23.8H, v23.8H, v31.8H
+        sub             x0,  x0,  x3,  lsl #3
+  .endif
+
+        st1             {v16.8H}, [x0], x3
+        st1             {v17.8H}, [x0], x3
+        st1             {v18.8H}, [x0], x3
+        st1             {v19.8H}, [x0], x3
+        st1             {v20.8H}, [x0], x3
+        st1             {v21.8H}, [x0], x3
+        st1             {v22.8H}, [x0], x3
+        st1             {v23.8H}, [x0], x3
+
+        ret
+endfunc
+.endm
+
+        h264_qpel_v_lowpass_l2_10 put
+        h264_qpel_v_lowpass_l2_10 avg
+
+.macro  h264_qpel8_10   type
+function ff_\type\()_h264_qpel8_mc10_neon_10, export=1
+        lowpass_const   w3
+        mov             x3,  x1
+        sub             x1,  x1,  #4
+        mov             x12, #16
+        b               \type\()_h264_qpel8_h_lowpass_l2_neon_10
+endfunc
+
+function ff_\type\()_h264_qpel8_mc20_neon_10, export=1
+        lowpass_const   w3
+        sub             x1,  x1,  #4
+        mov             x3,  x2
+        mov             x12, #16
+        b               \type\()_h264_qpel8_h_lowpass_neon_10
+endfunc
+
+function ff_\type\()_h264_qpel8_mc30_neon_10, export=1
+        lowpass_const   w3
+        add             x3,  x1,  #2
+        sub             x1,  x1,  #4
+        mov             x12, #16
+        b               \type\()_h264_qpel8_h_lowpass_l2_neon_10
+endfunc
+
+function ff_\type\()_h264_qpel8_mc01_neon_10, export=1
+        mov             x14, x30
+        mov             x12, x1
+\type\()_h264_qpel8_mc01_10:
+        lowpass_const   w3
+        mov             x3,  x2
+        sub             x1,  x1,  x2, lsl #1
+        bl              \type\()_h264_qpel8_v_lowpass_l2_neon_10
+        ret             x14
+endfunc
+
+function ff_\type\()_h264_qpel8_mc11_neon_10, export=1
+        mov             x14, x30
+        mov             x8,  x0
+        mov             x9,  x1
+\type\()_h264_qpel8_mc11_10:
+        lowpass_const   w3
+        mov             x11, sp
+        sub             sp,  sp,  #128
+        mov             x0,  sp
+        sub             x1,  x1,  #4
+        mov             x3,  #16
+        mov             x12, #16
+        bl              put_h264_qpel8_h_lowpass_neon_10
+        mov             x0,  x8
+        mov             x3,  x2
+        mov             x12, sp
+        sub             x1,  x9,  x2, lsl #1
+        mov             x2,  #16
+        bl              \type\()_h264_qpel8_v_lowpass_l2_neon_10
+        mov             sp,  x11
+        ret             x14
+endfunc
+
+function ff_\type\()_h264_qpel8_mc31_neon_10, export=1
+        add             x1,  x1,  #2
+        mov             x14, x30
+        mov             x8,  x0
+        mov             x9,  x1
+        sub             x1,  x1,  #2
+        b               \type\()_h264_qpel8_mc11_10
+endfunc
+
+function ff_\type\()_h264_qpel8_mc02_neon_10, export=1
+        mov             x14, x30
+        lowpass_const   w3
+        sub             x1,  x1,  x2, lsl #1
+        mov             x3,  x2
+        bl              \type\()_h264_qpel8_v_lowpass_neon_10
+        ret             x14
+endfunc
+
+function ff_\type\()_h264_qpel8_mc03_neon_10, export=1
+        mov             x14, x30
+        add             x12, x1,  x2
+        b               \type\()_h264_qpel8_mc01_10
+endfunc
+
+function ff_\type\()_h264_qpel8_mc13_neon_10, export=1
+        mov             x14, x30
+        mov             x8,  x0
+        mov             x9,  x1
+        add             x1,  x1,  x2
+        b               \type\()_h264_qpel8_mc11_10
+endfunc
+
+function ff_\type\()_h264_qpel8_mc33_neon_10, export=1
+        add             x1,  x1,  #2
+        mov             x14, x30
+        mov             x8,  x0
+        mov             x9,  x1
+        add             x1,  x1,  x2
+        sub             x1,  x1,  #2
+        b               \type\()_h264_qpel8_mc11_10
+endfunc
+.endm
+
+        h264_qpel8_10 put
+        h264_qpel8_10 avg
+
+.macro  h264_qpel16_10     type
+function ff_\type\()_h264_qpel16_mc10_neon_10, export=1
+        lowpass_const   w3
+        mov             x3,  x1
+        sub             x1,  x1,  #4
+        b               \type\()_h264_qpel16_h_lowpass_l2_neon_10
+endfunc
+
+function ff_\type\()_h264_qpel16_mc20_neon_10, export=1
+        lowpass_const   w3
+        sub             x1,  x1,  #4
+        mov             x3,  x2
+        b               \type\()_h264_qpel16_h_lowpass_neon_10
+endfunc
+
+function ff_\type\()_h264_qpel16_mc30_neon_10, export=1
+        lowpass_const   w3
+        add             x3,  x1,  #2
+        sub             x1,  x1,  #4
+        b               \type\()_h264_qpel16_h_lowpass_l2_neon_10
+endfunc
+
+function ff_\type\()_h264_qpel16_mc01_neon_10, export=1
+        mov             x14, x30
+        mov             x12, x1
+\type\()_h264_qpel16_mc01_10:
+        lowpass_const   w3
+        mov             x3,  x2
+        sub             x1,  x1,  x2, lsl #1
+        bl              \type\()_h264_qpel16_v_lowpass_l2_neon_10
+        ret             x14
+endfunc
+
+function ff_\type\()_h264_qpel16_mc11_neon_10, export=1
+        mov             x14, x30
+        mov             x8,  x0
+        mov             x9,  x1
+\type\()_h264_qpel16_mc11_10:
+        lowpass_const   w3
+        mov             x11, sp
+        sub             sp,  sp,  #512
+        mov             x0,  sp
+        sub             x1,  x1,  #4
+        mov             x3,  #32
+        bl              put_h264_qpel16_h_lowpass_neon_10
+        mov             x0,  x8
+        mov             x3,  x2
+        mov             x12, sp
+        sub             x1,  x9,  x2, lsl #1
+        mov             x2,  #32
+        bl              \type\()_h264_qpel16_v_lowpass_l2_neon_10
+        mov             sp,  x11
+        ret             x14
+endfunc
+
+function ff_\type\()_h264_qpel16_mc31_neon_10, export=1
+        add             x1,  x1,  #2
+        mov             x14, x30
+        mov             x8,  x0
+        mov             x9,  x1
+        sub             x1,  x1,  #2
+        b               \type\()_h264_qpel16_mc11_10
+endfunc
+
+function ff_\type\()_h264_qpel16_mc02_neon_10, export=1
+        mov             x14, x30
+        lowpass_const   w3
+        sub             x1,  x1,  x2, lsl #1
+        mov             x3,  x2
+        bl              \type\()_h264_qpel16_v_lowpass_neon_10
+        ret             x14
+endfunc
+
+function ff_\type\()_h264_qpel16_mc03_neon_10, export=1
+        mov             x14, x30
+        add             x12, x1,  x2
+        b               \type\()_h264_qpel16_mc01_10
+endfunc
+
+function ff_\type\()_h264_qpel16_mc13_neon_10, export=1
+        mov             x14, x30
+        mov             x8,  x0
+        mov             x9,  x1
+        add             x1,  x1,  x2
+        b               \type\()_h264_qpel16_mc11_10
+endfunc
+
+function ff_\type\()_h264_qpel16_mc33_neon_10, export=1
+        add             x1,  x1,  #2
+        mov             x14, x30
+        mov             x8,  x0
+        mov             x9,  x1
+        add             x1,  x1,  x2
+        sub             x1,  x1,  #2
+        b               \type\()_h264_qpel16_mc11_10
+endfunc
+.endm
+
+        h264_qpel16_10 put
+        h264_qpel16_10 avg
