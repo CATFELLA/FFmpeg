@@ -459,19 +459,6 @@ function ff_\type\()_\codec\()_chroma_mc4_neon_10, export=1
   .endif
         prfm            pldl1strm, [x1]
         prfm            pldl1strm, [x1, x2]
-  .ifc \codec,rv40
-        movrel          x6,  rv40bias
-        lsr             w9,  w5,  #1
-        lsr             w10, w4,  #1
-        lsl             w9,  w9,  #3
-        lsl             w10, w10, #1
-        add             w9,  w9,  w10
-        add             x6,  x6,  w9, UXTW
-        ld1r            {v22.8H}, [x6]
-  .endif
-  .ifc \codec,vc1
-        movi            v22.8H,   #28
-  .endif
         mul             w7,  w4,  w5
         lsl             w14, w5,  #3
         lsl             w13, w4,  #3
@@ -506,19 +493,17 @@ function ff_\type\()_\codec\()_chroma_mc4_neon_10, export=1
         trn1            v30.2D, v18.2D, v19.2D
         trn2            v31.2D, v18.2D, v19.2D
         add             v18.8H, v30.8H, v31.8H
-  .ifc \codec,h264
-        rshrn           v16.8B, v18.8H, #6
-  .else
         add             v18.8H, v18.8H, v22.8H
         shrn            v16.8B, v18.8H, #6
-  .endif
         subs            w3,  w3,  #2
         prfm            pldl1strm, [x1, x2]
+
   .ifc \type,avg
         ld1             {v20.S}[0], [x8], x2
         ld1             {v20.S}[1], [x8], x2
         urhadd          v16.8B, v16.8B, v20.8B
   .endif
+
         st1             {v16.S}[0], [x0], x2
         st1             {v16.S}[1], [x0], x2
         b.gt            1b
@@ -543,12 +528,7 @@ function ff_\type\()_\codec\()_chroma_mc4_neon_10, export=1
         trn2            v31.2D, v18.2D, v19.2D
         add             v18.8H, v30.8H, v31.8H
         prfm            pldl1strm, [x1]
-  .ifc \codec,h264
         rshrn           v16.8B, v18.8H, #6
-  .else
-        add             v18.8H, v18.8H, v22.8H
-        shrn            v16.8B, v18.8H, #6
-  .endif
   .ifc \type,avg
         ld1             {v20.S}[0], [x8], x2
         ld1             {v20.S}[1], [x8], x2
@@ -576,10 +556,6 @@ function ff_\type\()_\codec\()_chroma_mc4_neon_10, export=1
         prfm            pldl1strm, [x1]
   .ifc \codec,h264
         rshrn           v16.8B, v18.8H, #6
-  .else
-        add             v18.8H, v18.8H, v22.8H
-        shrn            v16.8B, v18.8H, #6
-  .endif
   .ifc \type,avg
         ld1             {v20.S}[0], [x8], x2
         ld1             {v20.S}[1], [x8], x2
@@ -596,12 +572,7 @@ function ff_\type\()_\codec\()_chroma_mc4_neon_10, export=1
         umull           v18.8H, v4.8B,  v30.8B
         subs            w3,  w3,  #2
         prfm            pldl1strm, [x1]
-  .ifc \codec,h264
         rshrn           v16.8B, v18.8H, #6
-  .else
-        add             v18.8H, v18.8H, v22.8H
-        shrn            v16.8B, v18.8H, #6
-  .endif
   .ifc \type,avg
         ld1             {v20.S}[0], [x8], x2
         ld1             {v20.S}[1], [x8], x2
