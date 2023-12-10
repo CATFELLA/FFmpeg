@@ -283,7 +283,7 @@ function ff_vp9_\txfm1\()_\txfm2\()_4x4_add_neon, export=1
 
         st1             {v31.8h}, [x2], #16
         // Transpose 4x4 with 16 bit elements
-        transpose_4x4H  v4,  v5,  v6,  v7,  v16, v17, v18, v19
+        transpose_4x4h  v4,  v5,  v6,  v7,  v16, v17, v18, v19
 
         \txfm2\()4      v4,  v5,  v6,  v7
 2:
@@ -420,7 +420,7 @@ function ff_vp9_\txfm1\()_\txfm2\()_8x8_add_neon, export=1
         \txfm1\()8
 
         // Transpose 8x8 with 16 bit elements
-        transpose_8x8H  v16, v17, v18, v19, v20, v21, v22, v23, v24, v25
+        transpose_8x8h  v16, v17, v18, v19, v20, v21, v22, v23, v24, v25
 
         \txfm2\()8
 2:
@@ -778,8 +778,8 @@ function \txfm\()16_1d_8x16_pass1_neon
         // Do two 8x8 transposes. Originally, v16-v31 contain the
         // 16 rows. Afterwards, v16-v23 and v24-v31 contain the two
         // transposed 8x8 blocks.
-        transpose_8x8H  v16, v17, v18, v19, v20, v21, v22, v23, v2, v3
-        transpose_8x8H  v24, v25, v26, v27, v28, v29, v30, v31, v2, v3
+        transpose_8x8h  v16, v17, v18, v19, v20, v21, v22, v23, v2, v3
+        transpose_8x8h  v24, v25, v26, v27, v28, v29, v30, v31, v2, v3
 
         // Store the transposed 8x8 blocks horizontally.
         cmp             x1,  #8
@@ -946,8 +946,8 @@ function idct16_1d_8x16_pass1_quarter_neon
         // Do two 8x8 transposes. Originally, v16-v31 contain the
         // 16 rows. Afterwards, v16-v23 and v24-v31 contain the two
         // transposed 8x8 blocks.
-        transpose_8x8H  v16, v17, v18, v19, v20, v21, v22, v23, v2, v3
-        transpose_8x8H  v24, v25, v26, v27, v28, v29, v30, v31, v2, v3
+        transpose_8x8h  v16, v17, v18, v19, v20, v21, v22, v23, v2, v3
+        transpose_8x8h  v24, v25, v26, v27, v28, v29, v30, v31, v2, v3
 
         // Store the transposed 8x8 blocks horizontally.
         // The first 8x8 block is kept in registers for the second pass,
@@ -993,8 +993,8 @@ function idct16_1d_8x16_pass1_half_neon
         // Do two 8x8 transposes. Originally, v16-v31 contain the
         // 16 rows. Afterwards, v16-v23 and v24-v31 contain the two
         // transposed 8x8 blocks.
-        transpose_8x8H  v16, v17, v18, v19, v20, v21, v22, v23, v2, v3
-        transpose_8x8H  v24, v25, v26, v27, v28, v29, v30, v31, v2, v3
+        transpose_8x8h  v16, v17, v18, v19, v20, v21, v22, v23, v2, v3
+        transpose_8x8h  v24, v25, v26, v27, v28, v29, v30, v31, v2, v3
 
         // Store the transposed 8x8 blocks horizontally.
         // The first 8x8 block is kept in registers for the second pass,
@@ -1254,8 +1254,8 @@ function idct32_1d_8x32_pass1\suffix\()_neon
         // Do two 8x8 transposes. Originally, v16-v31 contain the
         // 16 rows. Afterwards, v16-v23 and v24-v31 contain the
         // two transposed 8x8 blocks.
-        transpose_8x8H  v16, v17, v18, v19, v20, v21, v22, v23, v2, v3
-        transpose_8x8H  v24, v25, v26, v27, v28, v29, v30, v31, v2, v3
+        transpose_8x8h  v16, v17, v18, v19, v20, v21, v22, v23, v2, v3
+        transpose_8x8h  v24, v25, v26, v27, v28, v29, v30, v31, v2, v3
 
         // Store the registers a, b horizontally, followed by the
         // same registers b, a mirrored.
@@ -1315,8 +1315,8 @@ function idct32_1d_8x32_pass1\suffix\()_neon
 
         bl              idct32_odd\suffix
 
-        transpose_8x8H  v31, v30, v29, v28, v27, v26, v25, v24, v2, v3
-        transpose_8x8H  v23, v22, v21, v20, v19, v18, v17, v16, v2, v3
+        transpose_8x8h  v31, v30, v29, v28, v27, v26, v25, v24, v2, v3
+        transpose_8x8h  v23, v22, v21, v20, v19, v18, v17, v16, v2, v3
 
         // Store the registers a, b horizontally,
         // adding into the output first, and the mirrored,

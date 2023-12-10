@@ -43,7 +43,7 @@ function ff_vp8_luma_dc_wht_neon, export=1
 
         movi            v16.4h, #3
 
-        transpose_4x4H  v0, v1, v2, v3, v4, v5, v6, v7
+        transpose_4x4h  v0, v1, v2, v3, v4, v5, v6, v7
 
         add             v0.4h,  v0.4h,  v16.4h
 
@@ -108,7 +108,7 @@ function ff_vp8_idct_add_neon, export=1
         sub             v3.4h,   v16.4h,  v18.4h
         sub             v2.4h,   v17.4h,  v19.4h
 
-        transpose_4x4H  v0, v1, v2, v3, v24, v5, v6, v7
+        transpose_4x4h  v0, v1, v2, v3, v24, v5, v6, v7
 
         movi            v29.8h, #0
         smull           v26.4s,     v1.4h,  v4.h[0]
@@ -141,7 +141,7 @@ function ff_vp8_idct_add_neon, export=1
 
         sub             x0,  x0,  x2,  lsl #2
 
-        transpose_4x4H  v0, v1, v2, v3, v5, v6, v7, v16
+        transpose_4x4h  v0, v1, v2, v3, v5, v6, v7, v16
 
         uaddw           v0.8h,  v0.8h, v24.8b
         uaddw           v1.8h,  v1.8h, v25.8b
@@ -579,7 +579,7 @@ function ff_vp8_h_loop_filter16\name\()_neon, export=1
         ld1             {v6.d}[1], [x0], x1
         ld1             {v7.d}[1], [x0], x1
 
-        transpose_8x16B v0,  v1,  v2,  v3,  v4,  v5,  v6,  v7, v30, v31
+        transpose_8x16b v0,  v1,  v2,  v3,  v4,  v5,  v6,  v7, v30, v31
 
         dup             v22.16b, w2                 // flim_E
     .if !\simple
@@ -590,7 +590,7 @@ function ff_vp8_h_loop_filter16\name\()_neon, export=1
 
         sub             x0,  x0,  x1, lsl #4    // backup 16 rows
 
-        transpose_8x16B v0,  v1,  v2,  v3,  v4,  v5,  v6,  v7, v30, v31
+        transpose_8x16b v0,  v1,  v2,  v3,  v4,  v5,  v6,  v7, v30, v31
 
         // Store pixels:
         st1             {v0.d}[0], [x0], x1
@@ -641,7 +641,7 @@ function ff_vp8_h_loop_filter8uv\name\()_neon, export=1
         ld1             {v7.d}[0],     [x0], x2
         ld1             {v7.d}[1],     [x1], x2
 
-        transpose_8x16B v0,  v1,  v2,  v3,  v4,  v5,  v6,  v7, v30, v31
+        transpose_8x16b v0,  v1,  v2,  v3,  v4,  v5,  v6,  v7, v30, v31
 
         dup             v22.16b, w3                 // flim_E
         dup             v23.16b, w4                 // flim_I
@@ -651,7 +651,7 @@ function ff_vp8_h_loop_filter8uv\name\()_neon, export=1
         sub             x0,  x0,  x2, lsl #3    // backup u 8 rows
         sub             x1,  x1,  x2, lsl #3    // backup v 8 rows
 
-        transpose_8x16B v0,  v1,  v2,  v3,  v4,  v5,  v6,  v7, v30, v31
+        transpose_8x16b v0,  v1,  v2,  v3,  v4,  v5,  v6,  v7, v30, v31
 
         // Store pixels:
         st1             {v0.d}[0],     [x0], x2 // load u

@@ -42,7 +42,7 @@ function ff_h264_idct_add_neon, export=1
         sub             v2.4h,  v5.4h,  v6.4h
         sub             v3.4h,  v4.4h,  v7.4h
 
-        transpose_4x4H  v0, v1, v2, v3, v4, v5, v6, v7
+        transpose_4x4h  v0, v1, v2, v3, v4, v5, v6, v7
 
         add             v4.4h,  v0.4h,  v2.4h
         ld1             {v18.s}[0], [x0], x2
@@ -280,7 +280,7 @@ function ff_h264_idct8_add_neon, export=1
         st1             {v19.8h},  [x1],   #16
 
         idct8x8_cols    0
-        transpose_8x8H  v24, v25, v26, v27, v28, v29, v18, v31, v6, v7
+        transpose_8x8h  v24, v25, v26, v27, v28, v29, v18, v31, v6, v7
         idct8x8_cols    1
 
         mov             x3,  x0

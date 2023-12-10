@@ -563,7 +563,7 @@ function vp9_loop_filter_h_4_8_16_neon
         sub             x0,  x0,  x1, lsl #3
         add             x0,  x0,  #8
 
-        transpose_8x8H  v20, v21, v22, v23, v24, v25, v26, v27, v28, v29
+        transpose_8x8h  v20, v21, v22, v23, v24, v25, v26, v27, v28, v29
 
         loop_filter_4
 
@@ -577,7 +577,7 @@ function vp9_loop_filter_h_4_8_16_neon
         // We need to transpose them to columns, done with a 4x8 transpose
         // (which in practice is two 4x4 transposes of the two 4x4 halves
         // of the 8x4 pixels; into 4x8 pixels).
-        transpose_4x8H  v22, v23, v24, v25, v26, v27, v28, v29
+        transpose_4x8h  v22, v23, v24, v25, v26, v27, v28, v29
         st1             {v22.d}[0], [x9], x1
         st1             {v22.d}[1], [x0], x1
         st1             {v23.d}[0], [x9], x1
@@ -650,7 +650,7 @@ function vp9_loop_filter_h_8_8_16_neon
         sub             x0,  x0,  x1, lsl #3
         add             x0,  x0,  #8
 
-        transpose_8x8H  v20, v21, v22, v23, v24, v25, v26, v27, v28, v29
+        transpose_8x8h  v20, v21, v22, v23, v24, v25, v26, v27, v28, v29
 
         loop_filter_8
 
@@ -658,7 +658,7 @@ function vp9_loop_filter_h_8_8_16_neon
 
         // Even though only 6 pixels per row have been changed, we write the
         // full 8 pixel registers.
-        transpose_8x8H  v20, v21, v22, v23, v24, v25, v26, v27, v28, v29
+        transpose_8x8h  v20, v21, v22, v23, v24, v25, v26, v27, v28, v29
 
         st1             {v20.8h}, [x9], x1
         st1             {v24.8h}, [x0], x1
@@ -677,7 +677,7 @@ function vp9_loop_filter_h_8_8_16_neon
         // as in loop_filter_h_4_8.
         add             x9,  x9,  #4
         add             x0,  x9,  x1, lsl #2
-        transpose_4x8H  v22, v23, v24, v25, v26, v27, v28, v29
+        transpose_4x8h  v22, v23, v24, v25, v26, v27, v28, v29
         st1             {v22.d}[0], [x9], x1
         st1             {v22.d}[1], [x0], x1
         st1             {v23.d}[0], [x9], x1
@@ -795,13 +795,13 @@ function vp9_loop_filter_h_16_8_16_neon
         // The 16x8 pixels read above is in two 8x8 blocks; the left
         // half in v16-v23, and the right half in v24-v31. Do two 8x8 transposes
         // of this, to get one column per register.
-        transpose_8x8H  v16, v17, v18, v19, v20, v21, v22, v23, v0, v1
-        transpose_8x8H  v24, v25, v26, v27, v28, v29, v30, v31, v0, v1
+        transpose_8x8h  v16, v17, v18, v19, v20, v21, v22, v23, v0, v1
+        transpose_8x8h  v24, v25, v26, v27, v28, v29, v30, v31, v0, v1
 
         loop_filter_16
 
-        transpose_8x8H  v16, v2,  v3,  v4,  v5,  v6,  v8,  v9,  v0, v1
-        transpose_8x8H  v10, v11, v12, v13, v14, v15, v17, v31, v0, v1
+        transpose_8x8h  v16, v2,  v3,  v4,  v5,  v6,  v8,  v9,  v0, v1
+        transpose_8x8h  v10, v11, v12, v13, v14, v15, v17, v31, v0, v1
 
         st1             {v16.8h}, [x9], x1
         st1             {v10.8h}, [x0], x1
@@ -826,7 +826,7 @@ function vp9_loop_filter_h_16_8_16_neon
         // The same writeback as in loop_filter_h_8_8
         sub             x9,  x0,  #8
         add             x0,  x9,  x1, lsl #2
-        transpose_8x8H  v20, v21, v22, v23, v24, v25, v26, v27, v28, v29
+        transpose_8x8h  v20, v21, v22, v23, v24, v25, v26, v27, v28, v29
 
         st1             {v20.8h}, [x9], x1
         st1             {v24.8h}, [x0], x1
@@ -843,7 +843,7 @@ function vp9_loop_filter_h_16_8_16_neon
         // The same writeback as in loop_filter_h_4_8
         sub             x9,  x0,  #4
         add             x0,  x9,  x1, lsl #2
-        transpose_4x8H  v22, v23, v24, v25, v26, v27, v28, v29
+        transpose_4x8h  v22, v23, v24, v25, v26, v27, v28, v29
         st1             {v22.d}[0], [x9], x1
         st1             {v22.d}[1], [x0], x1
         st1             {v23.d}[0], [x9], x1

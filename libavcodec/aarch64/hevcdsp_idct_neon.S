@@ -266,10 +266,10 @@ function ff_hevc_idct_4x4_\bitdepth\()_neon, export=1
         ld1             {v4.4h}, [x1]
 
         tr_4x4          v0.4h, v1.4h, v2.4h, v3.4h, v16.4h, v17.4h, v18.4h, v19.4h, 7
-        transpose_4x8H  v16, v17, v18, v19, v26, v27, v28, v29
+        transpose_4x8h  v16, v17, v18, v19, v26, v27, v28, v29
 
         tr_4x4          v16.4h, v17.4h, v18.4h, v19.4h, v0.4h, v1.4h, v2.4h, v3.4h, 20 - \bitdepth
-        transpose_4x8H  v0, v1, v2, v3, v26, v27, v28, v29
+        transpose_4x8h  v0, v1, v2, v3, v26, v27, v28, v29
         st1             {v0.4h-v3.4h}, [x0]
         ret
 endfunc
@@ -310,8 +310,8 @@ endfunc
 .endm
 
 .macro transpose_8x8 r0, r1, r2, r3, r4, r5, r6, r7
-        transpose_4x8H  \r0, \r1, \r2, \r3, v2, v3, v4, v5
-        transpose_4x8H  \r4, \r5, \r6, \r7, v2, v3, v4, v5
+        transpose_4x8h  \r0, \r1, \r2, \r3, v2, v3, v4, v5
+        transpose_4x8h  \r4, \r5, \r6, \r7, v2, v3, v4, v5
 .endm
 
 .macro tr_8x4 shift, in0,in0t, in1,in1t, in2,in2t, in3,in3t, in4,in4t, in5,in5t, in6,in6t, in7,in7t, p1, p2
@@ -879,10 +879,10 @@ function ff_hevc_transform_luma_4x4_neon_8, export=1
         movi            v21.4h, #74
 
         tr4_luma_shift  v28.4h, v29.4h, v30.4h, v31.4h, #7
-        transpose_4x4H  v28, v29, v30, v31, v22, v23, v24, v25
+        transpose_4x4h  v28, v29, v30, v31, v22, v23, v24, v25
 
         tr4_luma_shift  v28.4h, v29.4h, v30.4h, v31.4h, #12
-        transpose_4x4H  v28, v29, v30, v31, v22, v23, v24, v25
+        transpose_4x4h  v28, v29, v30, v31, v22, v23, v24, v25
 
         st1             {v28.4h-v31.4h}, [x0]
         ret

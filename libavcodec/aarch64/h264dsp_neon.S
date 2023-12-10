@@ -152,11 +152,11 @@ function ff_h264_h_loop_filter_luma_neon, export=1
         ld1             {v4.d}[1],  [x0], x1
         ld1             {v26.d}[1], [x0], x1
 
-        transpose_8x16B v6, v20, v18, v16, v0, v2, v4, v26, v21, v23
+        transpose_8x16b v6, v20, v18, v16, v0, v2, v4, v26, v21, v23
 
         h264_loop_filter_luma
 
-        transpose_4x16B v17, v16, v0, v19, v21, v23, v25, v27
+        transpose_4x16b v17, v16, v0, v19, v21, v23, v25, v27
 
         sub             x0,  x0,  x1, lsl #4
         add             x0,  x0,  #2
@@ -349,11 +349,11 @@ function ff_h264_h_loop_filter_luma_intra_neon, export=1
         ld1             {v2.d}[1],  [x0], x1
         ld1             {v3.d}[1],  [x0], x1
 
-        transpose_8x16B v4, v5, v6, v7, v0, v1, v2, v3, v21, v23
+        transpose_8x16b v4, v5, v6, v7, v0, v1, v2, v3, v21, v23
 
         h264_loop_filter_luma_intra
 
-        transpose_8x16B v4, v5, v6, v7, v0, v1, v2, v3, v21, v23
+        transpose_8x16b v4, v5, v6, v7, v0, v1, v2, v3, v21, v23
 
         sub             x0,  x0,  x1, lsl #4
         st1             {v4.8b},  [x0], x1
@@ -441,11 +441,11 @@ h_loop_filter_chroma420:
         ld1             {v0.s}[1],  [x0], x1
         ld1             {v2.s}[1],  [x0], x1
 
-        transpose_4x8B  v18, v16, v0, v2, v28, v29, v30, v31
+        transpose_4x8b  v18, v16, v0, v2, v28, v29, v30, v31
 
         h264_loop_filter_chroma
 
-        transpose_4x8B  v18, v16, v0, v2, v28, v29, v30, v31
+        transpose_4x8b  v18, v16, v0, v2, v28, v29, v30, v31
 
         sub             x0,  x0,  x1, lsl #3
         st1             {v18.s}[0], [x0], x1
@@ -526,7 +526,7 @@ function ff_h264_h_loop_filter_chroma_mbaff_intra_neon, export=1
         ld1             {v17.8b}, [x4], x1
         ld1             {v19.8b}, [x4], x1
 
-        transpose_4x8B  v18, v16, v17, v19, v26, v27, v28, v29
+        transpose_4x8b  v18, v16, v17, v19, v26, v27, v28, v29
 
         h264_loop_filter_chroma_intra
 
@@ -554,7 +554,7 @@ h_loop_filter_chroma420_intra:
         ld1             {v17.s}[1], [x4], x1
         ld1             {v19.s}[1], [x4], x1
 
-        transpose_4x8B  v18, v16, v17, v19, v26, v27, v28, v29
+        transpose_4x8b  v18, v16, v17, v19, v26, v27, v28, v29
 
         h264_loop_filter_chroma_intra
 
@@ -927,11 +927,11 @@ h_loop_filter_chroma420_10:
         ld1             {v2.d}[0],  [x0 ], x1
         ld1             {v2.d}[1],  [x10], x1
 
-        transpose_4x8H  v18, v16, v0, v2, v28, v29, v30, v31
+        transpose_4x8h  v18, v16, v0, v2, v28, v29, v30, v31
 
         h264_loop_filter_chroma_10
 
-        transpose_4x8H  v18, v16, v0, v2, v28, v29, v30, v31
+        transpose_4x8h  v18, v16, v0, v2, v28, v29, v30, v31
 
         sub             x0,  x10,  x1, lsl #3
         st1             {v18.d}[0], [x0], x1
@@ -1017,7 +1017,7 @@ function ff_h264_h_loop_filter_chroma_mbaff_intra_neon_10, export=1
         ld1             {v16.8h}, [x4], x1
         ld1             {v19.8h}, [x9], x1
 
-        transpose_4x8H  v18, v16, v17, v19, v26, v27, v28, v29
+        transpose_4x8h  v18, v16, v17, v19, v26, v27, v28, v29
 
         h264_loop_filter_chroma_intra_10
 
@@ -1045,7 +1045,7 @@ h_loop_filter_chroma420_intra_10:
         ld1             {v19.4h},   [x4], x1
         ld1             {v19.d}[1], [x9], x1
 
-        transpose_4x8H  v18, v16, v17, v19, v26, v27, v28, v29
+        transpose_4x8h  v18, v16, v17, v19, v26, v27, v28, v29
 
         h264_loop_filter_chroma_intra_10
 

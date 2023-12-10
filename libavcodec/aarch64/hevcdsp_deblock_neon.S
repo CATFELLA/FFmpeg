@@ -131,7 +131,7 @@ function ff_hevc_v_loop_filter_chroma_\bitdepth\()_neon, export=1
         ld1             {v1.d}[1], [x3], x1
         ld1             {v2.d}[1], [x0], x1
         ld1             {v3.d}[1], [x3], x1
-        transpose_4x8H  v0, v1, v2, v3, v28, v29, v30, v31
+        transpose_4x8h  v0, v1, v2, v3, v28, v29, v30, v31
 .else
         sub             x0, x0, #2
         add             x3, x0, x1
@@ -144,13 +144,13 @@ function ff_hevc_v_loop_filter_chroma_\bitdepth\()_neon, export=1
         ld1             {v1.s}[1], [x3], x1
         ld1             {v2.s}[1], [x0], x1
         ld1             {v3.s}[1], [x3], x1
-        transpose_4x8B  v0, v1, v2, v3, v28, v29, v30, v31
+        transpose_4x8b  v0, v1, v2, v3, v28, v29, v30, v31
 .endif
         sub             x0, x0, x1, lsl #2
         sub             x3, x3, x1, lsl #2
         bl              hevc_loop_filter_chroma_body_\bitdepth\()_neon
 .if \bitdepth > 8
-        transpose_4x8H  v0, v1, v2, v3, v28, v29, v30, v31
+        transpose_4x8h  v0, v1, v2, v3, v28, v29, v30, v31
         st1             {v0.d}[0], [x0], x1
         st1             {v1.d}[0], [x3], x1
         st1             {v2.d}[0], [x0], x1
@@ -160,7 +160,7 @@ function ff_hevc_v_loop_filter_chroma_\bitdepth\()_neon, export=1
         st1             {v2.d}[1], [x0], x1
         st1             {v3.d}[1], [x3]
 .else
-        transpose_4x8B  v0, v1, v2, v3, v28, v29, v30, v31
+        transpose_4x8b  v0, v1, v2, v3, v28, v29, v30, v31
         st1             {v0.s}[0], [x0], x1
         st1             {v1.s}[0], [x3], x1
         st1             {v2.s}[0], [x0], x1
