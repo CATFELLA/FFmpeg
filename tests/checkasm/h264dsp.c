@@ -229,6 +229,44 @@ static void check_idct(void)
     }
 }
 
+static void prepare_idct_bufs(uint8_t *dst_full, int *block_offset,
+                              int16_t *coef_full, uint8_t *nnzc,
+                              int buf_size, int sz, int bit_depth, int intra) {
+    int i, y;
+
+    for (i = 0; i < buf_size; i += sz * sz) {
+        uint8_t src[8 * 8 * 2];
+        uint8_t dst[8 * 8 * 2];
+        int16_t coef[8 * 8 * 2];
+        int index = i / sz;
+        int block_y = (index / 16) * sz;
+        int block_x = index % 16;
+        int offset = (block_y * 16 + block_x) * SIZEOF_PIXEL;
+        int nnz = rnd() % 3;
+
+        randomize_buffers();
+        if (sz == 4)
+            dct4x4(coef, bit_depth);
+        else
+            dct8x8(coef, bit_depth);
+
+        for (y = 0; y < sz; y++)
+            memcpy(&dst_full[offset + y * 16 * SIZEOF_PIXEL],
+                   &dst[PIXEL_STRIDE * y], sz * SIZEOF_PIXEL);
+
+        if (nnz > 1)
+            nnz = sz * sz;
+        memcpy(&coef_full[i * SIZEOF_COEF/sizeof(coef[0])],
+               coef, nnz * SIZEOF_COEF);
+
+        if (intra && nnz == 1)
+            nnz = 0;
+
+        nnzc[scan8[i / 16]] = nnz;
+        block_offset[i / 16] = offset;
+    }
+}
+
 static void check_idct_multiple(void)
 {
     LOCAL_ALIGNED_16(uint8_t, dst_full,  [16 * 16 * 2]);
@@ -239,7 +277,7 @@ static void check_idct_multiple(void)
     LOCAL_ALIGNED_16(int16_t, coef1, [16 * 16 * 2]);
     LOCAL_ALIGNED_16(uint8_t, nnzc,  [15 * 8]);
     H264DSPContext h;
-    int bit_depth, i, y, func;
+    int bit_depth, func;
     declare_func_emms(AV_CPU_FLAG_MMX, void, uint8_t *dst, const int *block_offset, int16_t *block, int stride, const uint8_t nnzc[15*8]);
 
     for (bit_depth = 8; bit_depth <= 10; bit_depth++) {
@@ -267,37 +305,9 @@ static void check_idct_multiple(void)
             }
             memset(nnzc, 0, 15 * 8);
             memset(coef_full, 0, 16 * 16 * SIZEOF_COEF);
-            for (i = 0; i < 16 * 16; i += sz * sz) {
-                uint8_t src[8 * 8 * 2];
-                uint8_t dst[8 * 8 * 2];
-                int16_t coef[8 * 8 * 2];
-                int index = i / sz;
-                int block_y = (index / 16) * sz;
-                int block_x = index % 16;
-                int offset = (block_y * 16 + block_x) * SIZEOF_PIXEL;
-                int nnz = rnd() % 3;
 
-                randomize_buffers();
-                if (sz == 4)
-                    dct4x4(coef, bit_depth);
-                else
-                    dct8x8(coef, bit_depth);
-
-                for (y = 0; y < sz; y++)
-                    memcpy(&dst_full[offset + y * 16 * SIZEOF_PIXEL],
-                           &dst[PIXEL_STRIDE * y], sz * SIZEOF_PIXEL);
-
-                if (nnz > 1)
-                    nnz = sz * sz;
-                memcpy(&coef_full[i * SIZEOF_COEF/sizeof(coef[0])],
-                       coef, nnz * SIZEOF_COEF);
-
-                if (intra && nnz == 1)
-                    nnz = 0;
-
-                nnzc[scan8[i / 16]] = nnz;
-                block_offset[i / 16] = offset;
-            }
+            prepare_idct_bufs(dst_full, block_offset, coef_full, nnzc,
+                              16 * 16 * 2, sz, bit_depth, intra);
 
             if (check_func(idct, "%s_%dbpp", name, bit_depth)) {
                 memcpy(coef0, coef_full, 16 * 16 * SIZEOF_COEF);
