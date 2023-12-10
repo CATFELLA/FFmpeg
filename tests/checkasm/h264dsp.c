@@ -326,6 +326,58 @@ static void check_idct_multiple(void)
 }
 
 
+static void check_idct_twocomp(void)
+{
+    LOCAL_ALIGNED_16(uint8_t, dst_full,  [3 * 16 * 16 * 2]);
+    LOCAL_ALIGNED_16(int16_t, coef_full, [3 * 16 * 16 * 2]);
+    LOCAL_ALIGNED_16(uint8_t, dst00,     [3 * 16 * 16 * 2]);
+    LOCAL_ALIGNED_16(uint8_t, dst01,     [3 * 16 * 16 * 2]);
+    LOCAL_ALIGNED_16(uint8_t, dst10,     [3 * 16 * 16 * 2]);
+    LOCAL_ALIGNED_16(uint8_t, dst11,     [3 * 16 * 16 * 2]);
+    LOCAL_ALIGNED_16(int16_t, coef0,     [3 * 16 * 16 * 2]);
+    LOCAL_ALIGNED_16(int16_t, coef1,     [3 * 16 * 16 * 2]);
+    LOCAL_ALIGNED_16(uint8_t, nnzc,      [15 * 8]);
+    uint8_t *dstbig0[2] = { dst00, dst01 };
+    uint8_t *dstbig1[2] = { dst10, dst11 };
+
+    H264DSPContext h;
+    int bit_depth;
+    int sz = 4;
+    int block_offset[3 * 16] = { 0 };
+    void (*idct)(uint8_t **, const int *, int16_t *, int, const uint8_t[]) = NULL;
+    declare_func_emms(AV_CPU_FLAG_MMX, void, uint8_t **dst, const int *block_offset, int16_t *block, int stride, const uint8_t nnzc[15*8]);
+
+    for (bit_depth = 8; bit_depth <= 10; bit_depth++) {
+        ff_h264dsp_init(&h, bit_depth, 1);
+        idct = h.h264_idct_add8;
+
+        if (check_func(idct, "h264_idct_add8_%dbpp", bit_depth)) {
+            memset(nnzc, 0, 15 * 8);
+            memset(coef_full, 0, 3 * 16 * 16 * SIZEOF_COEF);
+
+            prepare_idct_bufs(dst_full, block_offset, coef_full, nnzc,
+                              3 * 16 * 16, sz, bit_depth, 1);
+
+            memcpy(coef0, coef_full, 3 * 16 * 16 * 2);
+            memcpy(coef1, coef_full, 3 * 16 * 16 * 2);
+            memcpy(dst00, dst_full, 3 * 16 * 16 * 2);
+            memcpy(dst01, dst_full, 3 * 16 * 16 * 2);
+            memcpy(dst10, dst_full, 3 * 16 * 16 * 2);
+            memcpy(dst11, dst_full, 3 * 16 * 16 * 2);
+
+            call_ref(dstbig0, block_offset, coef0, 16 * SIZEOF_PIXEL, nnzc);
+            call_new(dstbig1, block_offset, coef1, 16 * SIZEOF_PIXEL, nnzc);
+            if (memcmp(dst00, dst10, 3 * 16 * 16 * 2) ||
+                memcmp(dst01, dst11, 3 * 16 * 16 * 2) ||
+                memcmp(coef0, coef1, 3 * 16 * 16 * 2)) {
+                fail();
+            }
+            bench_new(dstbig1, block_offset, coef1, 16 * SIZEOF_PIXEL, nnzc);
+        }
+    }
+}
+
+
 static void check_loop_filter(void)
 {
     LOCAL_ALIGNED_16(uint8_t, dst, [32 * 16 * 2]);
@@ -454,6 +506,7 @@ void checkasm_check_h264dsp(void)
 {
     check_idct();
     check_idct_multiple();
+    check_idct_twocomp();
     report("idct");
 
     check_loop_filter();
