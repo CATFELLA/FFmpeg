@@ -169,5 +169,53 @@
 
         trn1            \r3\().2d,  \r9\().2d,  \r7\().2d
         trn2            \r7\().2d,  \r9\().2d,  \r7\().2d
+.endm
 
+.macro transpose_4x4s r0, r1, r2, r3, r4, r5, r6, r7
+        trn1            \r4\().4s,  \r0\().4s,  \r1\().4s
+        trn2            \r5\().4s,  \r0\().4s,  \r1\().4s
+        trn1            \r6\().4s,  \r2\().4s,  \r3\().4s
+        trn2            \r7\().4s,  \r2\().4s,  \r3\().4s
+        trn1            \r0\().2d,  \r4\().2d,  \r6\().2d
+        trn2            \r2\().2d,  \r4\().2d,  \r6\().2d
+        trn1            \r1\().2d,  \r5\().2d,  \r7\().2d
+        trn2            \r3\().2d,  \r5\().2d,  \r7\().2d
+.endm
+
+// Transpose a 8x8 matrix of 32 bit elements, where each row is spread out
+// over two registers.
+.macro transpose_8x8s r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15, t0, t1, t2, t3
+        transpose_4x4s  \r0,  \r2,  \r4,  \r6,  \t0, \t1, \t2, \t3
+        transpose_4x4s  \r9,  \r11, \r13, \r15, \t0, \t1, \t2, \t3
+
+        // Do 4x4 transposes of r1,r3,r5,r7 and r8,r10,r12,r14
+        // while swapping the two 4x4 matrices between each other
+
+        // First step of the 4x4 transpose of r1-r7, into t0-t3
+        trn1            \t0\().4s,  \r1\().4s,  \r3\().4s
+        trn2            \t1\().4s,  \r1\().4s,  \r3\().4s
+        trn1            \t2\().4s,  \r5\().4s,  \r7\().4s
+        trn2            \t3\().4s,  \r5\().4s,  \r7\().4s
+
+        // First step of the 4x4 transpose of r8-r12, into r1-r7
+        trn1            \r1\().4s,  \r8\().4s,  \r10\().4s
+        trn2            \r3\().4s,  \r8\().4s,  \r10\().4s
+        trn1            \r5\().4s,  \r12\().4s, \r14\().4s
+        trn2            \r7\().4s,  \r12\().4s, \r14\().4s
+
+        // Second step of the 4x4 transpose of r1-r7 (now in t0-r3), into r8-r12
+        trn1            \r8\().2d,  \t0\().2d,  \t2\().2d
+        trn2            \r12\().2d, \t0\().2d,  \t2\().2d
+        trn1            \r10\().2d, \t1\().2d,  \t3\().2d
+        trn2            \r14\().2d, \t1\().2d,  \t3\().2d
+
+        // Second step of the 4x4 transpose of r8-r12 (now in r1-r7), in place as far as possible
+        trn1            \t0\().2d,  \r1\().2d,  \r5\().2d
+        trn2            \r5\().2d,  \r1\().2d,  \r5\().2d
+        trn1            \t1\().2d,  \r3\().2d,  \r7\().2d
+        trn2            \r7\().2d,  \r3\().2d,  \r7\().2d
+
+        // Move the outputs of trn1 back in place
+        mov             \r1\().16b,  \t0\().16b
+        mov             \r3\().16b,  \t1\().16b
 .endm
