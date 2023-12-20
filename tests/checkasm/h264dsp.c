@@ -325,17 +325,48 @@ static void check_idct_multiple(void)
     }
 }
 
+static void print_buffs_16(const uint16_t *buf0, const uint16_t *buf1, const int size, int linebreak) {
+    fprintf(stderr, "\nexpected");
+    for (int i = 0; i < size; i++) {
+        if (i % linebreak == 0)
+        {
+            fprintf(stderr, "\n");
+        }
+        if (buf0[i] == buf1[i]) {
+            fprintf(stderr, "%06hd ", buf0[i]);
+        } else {
+           fprintf(stderr, "\033[0;34m%06hd\033[0m ", buf0[i]);
+        }
+    }
+    fprintf(stderr, "\ngot");
+    for (int i = 0; i < size; i++) {
+        if (i % linebreak == 0)
+        {
+            fprintf(stderr, "\n");
+        }
+        if (buf0[i] == buf1[i]) {
+            fprintf(stderr, "%06hd ", buf1[i]);
+        } else {
+            fprintf(stderr, "\033[0;31m%06hd\033[0m ", buf1[i]);
+        }
+    }
+    fprintf(stderr, "\n");
+
+    return;
+}
+
+#define MAGIC_NUMBER 5 * 16 * 16
 
 static void check_idct_twocomp(void)
 {
-    LOCAL_ALIGNED_16(uint8_t, dst_full,  [3 * 16 * 16 * 2]);
-    LOCAL_ALIGNED_16(int16_t, coef_full, [3 * 16 * 16 * 2]);
-    LOCAL_ALIGNED_16(uint8_t, dst00,     [3 * 16 * 16 * 2]);
-    LOCAL_ALIGNED_16(uint8_t, dst01,     [3 * 16 * 16 * 2]);
-    LOCAL_ALIGNED_16(uint8_t, dst10,     [3 * 16 * 16 * 2]);
-    LOCAL_ALIGNED_16(uint8_t, dst11,     [3 * 16 * 16 * 2]);
-    LOCAL_ALIGNED_16(int16_t, coef0,     [3 * 16 * 16 * 2]);
-    LOCAL_ALIGNED_16(int16_t, coef1,     [3 * 16 * 16 * 2]);
+    LOCAL_ALIGNED_16(uint8_t, dst_full,  [MAGIC_NUMBER * 2]);
+    LOCAL_ALIGNED_16(int16_t, coef_full, [MAGIC_NUMBER * 2]);
+    LOCAL_ALIGNED_16(uint8_t, dst00,     [MAGIC_NUMBER * 2]);
+    LOCAL_ALIGNED_16(uint8_t, dst01,     [MAGIC_NUMBER * 2]);
+    LOCAL_ALIGNED_16(uint8_t, dst10,     [MAGIC_NUMBER * 2]);
+    LOCAL_ALIGNED_16(uint8_t, dst11,     [MAGIC_NUMBER * 2]);
+    LOCAL_ALIGNED_16(int16_t, coef0,     [MAGIC_NUMBER * 2]);
+    LOCAL_ALIGNED_16(int16_t, coef1,     [MAGIC_NUMBER * 2]);
     LOCAL_ALIGNED_16(uint8_t, nnzc,      [15 * 8]);
     uint8_t *dstbig0[2] = { dst00, dst01 };
     uint8_t *dstbig1[2] = { dst10, dst11 };
@@ -353,23 +384,23 @@ static void check_idct_twocomp(void)
 
         if (check_func(idct, "h264_idct_add8_%dbpp", bit_depth)) {
             memset(nnzc, 0, 15 * 8);
-            memset(coef_full, 0, 3 * 16 * 16 * SIZEOF_COEF);
+            memset(coef_full, 0, MAGIC_NUMBER * SIZEOF_COEF);
 
             prepare_idct_bufs(dst_full, block_offset, coef_full, nnzc,
-                              3 * 16 * 16, sz, bit_depth, 1);
+                              MAGIC_NUMBER, sz, bit_depth, 1);
 
-            memcpy(coef0, coef_full, 3 * 16 * 16 * 2);
-            memcpy(coef1, coef_full, 3 * 16 * 16 * 2);
-            memcpy(dst00, dst_full, 3 * 16 * 16 * 2);
-            memcpy(dst01, dst_full, 3 * 16 * 16 * 2);
-            memcpy(dst10, dst_full, 3 * 16 * 16 * 2);
-            memcpy(dst11, dst_full, 3 * 16 * 16 * 2);
+            memcpy(coef0, coef_full, MAGIC_NUMBER * 2);
+            memcpy(coef1, coef_full, MAGIC_NUMBER * 2);
+            memcpy(dst00, dst_full, MAGIC_NUMBER * 2);
+            memcpy(dst01, dst_full, MAGIC_NUMBER * 2);
+            memcpy(dst10, dst_full, MAGIC_NUMBER * 2);
+            memcpy(dst11, dst_full, MAGIC_NUMBER * 2);
 
             call_ref(dstbig0, block_offset, coef0, 16 * SIZEOF_PIXEL, nnzc);
             call_new(dstbig1, block_offset, coef1, 16 * SIZEOF_PIXEL, nnzc);
-            if (memcmp(dst00, dst10, 3 * 16 * 16 * 2) ||
-                memcmp(dst01, dst11, 3 * 16 * 16 * 2) ||
-                memcmp(coef0, coef1, 3 * 16 * 16 * 2)) {
+            if (memcmp(dstbig0[0], dstbig1[0], MAGIC_NUMBER * SIZEOF_PIXEL) ||
+                memcmp(dstbig0[1], dstbig1[1], MAGIC_NUMBER * SIZEOF_PIXEL) ||
+                memcmp(coef0, coef1, MAGIC_NUMBER * 2)) {
                 fail();
             }
             bench_new(dstbig1, block_offset, coef1, 16 * SIZEOF_PIXEL, nnzc);
